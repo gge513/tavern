@@ -231,6 +231,38 @@ Steer, over the course of the session, toward one of four endings — Act, Invit
   }
 }
 
+/**
+ * Call site 2d: the shared table — two students brainstorming in real time,
+ * bartender as neutral facilitator, speaking only when summoned (the bell).
+ */
+export async function bartenderTable(input: {
+  names: string[];
+  transcript: { speaker: string; content: string }[];
+  ledger?: string;
+}): Promise<string | null> {
+  try {
+    const recent = input.transcript.slice(-24);
+    const res = await client.messages.create({
+      model: MODEL,
+      max_tokens: 600,
+      system: `${BARTENDER_CORE}
+
+Mode: shared table. ${input.names.join(" and ")} are working through something together at one table, in real time. You are the neutral facilitator, and you speak ONLY when they ring the bell — they just did.
+
+Read the exchange and do the facilitator's job, briefly: name each person's perspective in their own terms; name what they already agree is true; name what remains unresolved or unknown; then offer exactly one concrete next move for the conversation (a question one should ask the other, a decision they're circling, a thing to write down). Never declare a winner, never smooth over a real disagreement — unresolved is an honest state. Under 130 words, then go back to the bar.`,
+      messages: [
+        {
+          role: "user",
+          content: `${input.ledger ? `Their shared ledger:\n${input.ledger}\n\n` : ""}The table so far:\n${recent.map((t) => `${t.speaker}: ${t.content}`).join("\n")}`,
+        },
+      ],
+    });
+    return textOf(res);
+  } catch {
+    return null;
+  }
+}
+
 /** Tavern "Invite" ending: draft the message to bring back to the project. */
 export async function bartenderInviteDraft(input: {
   transcript: { speaker: "you" | "bartender"; content: string }[];

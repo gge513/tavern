@@ -255,6 +255,32 @@ export async function tavernSessionsFor(userId: number) {
   });
 }
 
+/** Shared tables the user was invited to (participant, not owner). */
+export async function sharedTablesFor(userId: number) {
+  const rows = await db
+    .select({
+      id: tavernSessions.id,
+      outcome: tavernSessions.outcome,
+      createdAt: tavernSessions.createdAt,
+      ownerName: users.name,
+    })
+    .from(tavernSessions)
+    .innerJoin(
+      conversationParticipants,
+      eq(conversationParticipants.conversationId, tavernSessions.conversationId)
+    )
+    .innerJoin(users, eq(users.id, tavernSessions.ownerId))
+    .where(
+      and(
+        eq(conversationParticipants.userId, userId),
+        eq(tavernSessions.shared, true),
+        sql`${tavernSessions.ownerId} <> ${userId}`
+      )
+    )
+    .orderBy(sql`${tavernSessions.id} desc`);
+  return rows;
+}
+
 export async function listMessages(conversationId: number, afterId?: number) {
   return db
     .select({

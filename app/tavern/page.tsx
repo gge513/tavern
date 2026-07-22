@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/current-user";
-import { tavernSessionsFor } from "@/lib/messaging";
+import { sharedTablesFor, tavernSessionsFor } from "@/lib/messaging";
 import { openTavernSessionAction } from "./actions";
 
 export default async function TavernPage() {
@@ -10,6 +10,7 @@ export default async function TavernPage() {
   if (!user) redirect("/signin");
 
   const sessions = await tavernSessionsFor(user.id);
+  const sharedTables = await sharedTablesFor(user.id);
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -26,6 +27,29 @@ export default async function TavernPage() {
       <form action={openTavernSessionAction}>
         <button className="btn">Pull up a stool</button>
       </form>
+
+      {sharedTables.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="label">Tables you&apos;ve been invited to</h2>
+          {sharedTables.map((s) => (
+            <Link
+              key={s.id}
+              href={`/tavern/${s.id}`}
+              className="card p-3 flex items-center gap-3 text-sm hover:bg-hover"
+            >
+              <span>Table with {s.ownerName}</span>
+              {s.outcome ? (
+                <span className="tag tag-amber capitalize">{s.outcome}</span>
+              ) : (
+                <span className="tag">live</span>
+              )}
+              <span className="text-xs text-dim ml-auto">
+                {new Date(s.createdAt).toLocaleDateString()}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {sessions.length > 0 && (
         <div className="space-y-2">

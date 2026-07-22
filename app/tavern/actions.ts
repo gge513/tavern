@@ -4,10 +4,17 @@ import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { bartenderInviteDraft } from "@/lib/ai";
+import { bartenderInviteDraft, bartenderTable } from "@/lib/ai";
 import { currentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { conversationParticipants, conversations, messages, tavernSessions } from "@/lib/db/schema";
+import {
+  conversationParticipants,
+  conversations,
+  messages,
+  notifications,
+  tavernSessions,
+  users,
+} from "@/lib/db/schema";
 import { listMessages } from "@/lib/messaging";
 
 export async function openTavernSessionAction() {
@@ -44,6 +51,114 @@ async function ownSession(sessionId: number, userId: number) {
   });
 }
 
+/** Owner always; an invited collaborator too, once the table is shared. */
+async function sessionForParticipant(sessionId: number, userId: number) {
+  const session = await db.query.tavernSessions.findFirst({
+    where: eq(tavernSessions.id, sessionId),
+  });
+  if (!session) return null;
+  if (session.ownerId === userId) return session;
+  if (!session.shared) return null;
+  const part = await db.query.conversationParticipants.findFirst({
+    where: and(
+      eq(conversationParticipants.conversationId, session.conversationId),
+      eq(conversationParticipants.userId, userId)
+    ),
+  });
+  return part ? session : null;
+}
+
+/**
+ * Pull a second stool up. Owner-only, explicit, and loud about what it means:
+ * the invitee sees everything already said in this session. The bartender
+ * switches to facilitator mode and only speaks when summoned.
+ */
+export async function inviteToTableAction(sessionId: number, formData: FormData) {
+  const user = await currentUser();
+  if (!user) redirect("/signin");
+  const session = await ownSession(sessionId, user.id);
+  if (!session || session.outcome) return;
+
+  const inviteeId = Number(formData.get("userId"));
+  if (!Number.isInteger(inviteeId) || inviteeId === user.id) return;
+  const invitee = await db.query.users.findFirst({ where: eq(users.id, inviteeId) });
+  if (!invitee) return;
+
+  await db
+    .insert(conversationParticipants)
+    .values({ conversationId: session.conversationId, userId: inviteeId })
+    .onConflictDoNothing();
+  await db
+    .update(tavernSessions)
+    .set({ shared: true })
+    .where(eq(tavernSessions.id, sessionId));
+
+  await db.insert(messages).values({
+    conversationId: session.conversationId,
+    senderKind: "system",
+    content: `${user.name} pulled up a second stool — this is now a shared table with ${invitee.name}. Everything in this session is visible to both of you. Ring the bell when you want the bartender's read.`,
+  });
+
+  if (!invitee.isSeed) {
+    await db.insert(notifications).values({
+      userId: inviteeId,
+      kind: "introduction",
+      content: `${user.name} invited you to a table in the tavern — a live thinking session.`,
+      href: `/tavern/${sessionId}`,
+    });
+  }
+  revalidatePath(`/tavern/${sessionId}`);
+}
+
+/** The bell: either participant summons the facilitator. */
+export async function summonBartenderAction(sessionId: number) {
+  const user = await currentUser();
+  if (!user) redirect("/signin");
+  const session = await sessionForParticipant(sessionId, user.id);
+  if (!session || session.outcome || !session.shared) return;
+
+  const parts = await db
+    .select({ id: users.id, name: users.name })
+    .from(conversationParticipants)
+    .innerJoin(users, eq(users.id, conversationParticipants.userId))
+    .where(eq(conversationParticipants.conversationId, session.conversationId));
+  const names = new Map(parts.map((p) => [p.id, p.name]));
+
+  const history = await listMessages(session.conversationId);
+  const l = session.ledger;
+  const ledgerText =
+    l && (l.said?.length || l.assuming?.length || l.unknown?.length)
+      ? `Said: ${l.said?.join("; ") || "none"}. Assuming: ${l.assuming?.join("; ") || "none"}. Unknown: ${l.unknown?.join("; ") || "none"}.`
+      : undefined;
+
+  const reply =
+    (await bartenderTable({
+      names: parts.map((p) => p.name),
+      transcript: history.map((m) => ({
+        speaker:
+          m.senderKind === "bartender"
+            ? "Bartender"
+            : m.senderKind === "system"
+              ? "(the room)"
+              : names.get(m.senderId ?? -1) ?? "Someone",
+        content: m.content,
+      })),
+      ledger: ledgerText,
+    })) ??
+    "Here's what I can offer from behind the bar: you each have a version of this, and at least one thing you both already treat as true. Say that shared thing out loud first, then name the one point where your readings split — that's the conversation. I'll be over here.";
+
+  await db.insert(messages).values({
+    conversationId: session.conversationId,
+    senderKind: "bartender",
+    content: reply,
+  });
+  await db
+    .update(conversations)
+    .set({ lastActivityAt: new Date() })
+    .where(eq(conversations.id, session.conversationId));
+  revalidatePath(`/tavern/${sessionId}`);
+}
+
 /** Add a card to the thinking ledger. */
 export async function addLedgerItemAction(
   sessionId: number,
@@ -52,7 +167,7 @@ export async function addLedgerItemAction(
 ) {
   const user = await currentUser();
   if (!user) redirect("/signin");
-  const session = await ownSession(sessionId, user.id);
+  const session = await sessionForParticipant(sessionId, user.id);
   if (!session || session.outcome) return;
   const text = String(formData.get("text") ?? "").trim().slice(0, 200);
   if (!text) return;
@@ -73,7 +188,7 @@ export async function cycleLedgerItemAction(
 ) {
   const user = await currentUser();
   if (!user) redirect("/signin");
-  const session = await ownSession(sessionId, user.id);
+  const session = await sessionForParticipant(sessionId, user.id);
   if (!session || session.outcome) return;
   const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
   const items = [...(ledger[column] ?? [])];
@@ -93,7 +208,7 @@ export async function removeLedgerItemAction(
 ) {
   const user = await currentUser();
   if (!user) redirect("/signin");
-  const session = await ownSession(sessionId, user.id);
+  const session = await sessionForParticipant(sessionId, user.id);
   if (!session || session.outcome) return;
   const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
   const items = [...(ledger[column] ?? [])];
