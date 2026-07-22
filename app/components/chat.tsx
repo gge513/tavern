@@ -43,7 +43,10 @@ export function Chat(props: {
   showStructured?: boolean;
   members?: { id: number; name: string }[];
   placeholder?: string;
+  /** Show a "the bartender considers this" row while a send is in flight. */
   bartenderTyping?: boolean;
+  /** One-tap conversation starters rendered above the composer. */
+  prompts?: string[];
 }) {
   const [msgs, setMsgs] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -123,11 +126,34 @@ export function Chat(props: {
         {msgs.map((m) => (
           <MessageRow key={m.id} m={m} mine={m.senderId === props.currentUserId} members={props.members} />
         ))}
+        {props.bartenderTyping && sending && (
+          <div
+            className="card p-3 text-sm max-w-[85%] italic text-dim"
+            style={{ borderColor: "var(--amber-dim)" }}
+          >
+            <span className="text-xs font-semibold text-amber not-italic">The Bartender</span>
+            <span className="bartender-pour"> considers this, polishing a glass…</span>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
       {props.canPost ? (
         <div className="pt-3 space-y-2">
+          {props.prompts && props.prompts.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {props.prompts.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="tag hover:text-ink"
+                  onClick={() => setDraft((d) => (d.trim() ? d : p + " "))}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
           {props.showStructured && (
             <div className="flex flex-wrap gap-2 items-center">
               {STRUCTURED.map((s) => (

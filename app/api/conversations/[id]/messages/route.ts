@@ -75,13 +75,22 @@ export async function POST(
     if (session && !session.outcome) {
       const owner = await db.query.users.findFirst({ where: eq(users.id, userId) });
       const history = await listMessages(conversationId);
+      const transcript = history.map((m) => ({
+        speaker: (m.senderKind === "bartender" ? "bartender" : "you") as "you" | "bartender",
+        content: m.content,
+      }));
+      // The ledger rides along as narrow session context (spec 5.7).
+      const l = session.ledger;
+      if (l && (l.said?.length || l.assuming?.length || l.unknown?.length)) {
+        transcript.push({
+          speaker: "you",
+          content: `(My ledger so far — Said: ${l.said?.join("; ") || "none"}. Assuming: ${l.assuming?.join("; ") || "none"}. Unknown: ${l.unknown?.join("; ") || "none"}.)`,
+        });
+      }
       const reply =
         (await bartenderTavern({
           ownerName: owner?.name ?? "friend",
-          transcript: history.map((m) => ({
-            speaker: m.senderKind === "bartender" ? "bartender" : "you",
-            content: m.content,
-          })),
+          transcript,
         })) ??
         "Say more about what actually happened — the words that were said, before any reading of them.";
       await db.insert(messages).values({

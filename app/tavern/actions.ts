@@ -34,6 +34,75 @@ export async function openTavernSessionAction() {
   redirect(`/tavern/${session.id}`);
 }
 
+export type LedgerColumn = "said" | "assuming" | "unknown";
+
+const LEDGER_ORDER: LedgerColumn[] = ["said", "assuming", "unknown"];
+
+async function ownSession(sessionId: number, userId: number) {
+  return db.query.tavernSessions.findFirst({
+    where: and(eq(tavernSessions.id, sessionId), eq(tavernSessions.ownerId, userId)),
+  });
+}
+
+/** Add a card to the thinking ledger. */
+export async function addLedgerItemAction(
+  sessionId: number,
+  column: LedgerColumn,
+  formData: FormData
+) {
+  const user = await currentUser();
+  if (!user) redirect("/signin");
+  const session = await ownSession(sessionId, user.id);
+  if (!session || session.outcome) return;
+  const text = String(formData.get("text") ?? "").trim().slice(0, 200);
+  if (!text) return;
+  const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
+  ledger[column] = [...(ledger[column] ?? []), text];
+  await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
+  revalidatePath(`/tavern/${sessionId}`);
+}
+
+/**
+ * Reclassify a card: said → assuming → unknown → said. The point of the
+ * discipline is noticing that something you filed as fact was a reading.
+ */
+export async function cycleLedgerItemAction(
+  sessionId: number,
+  column: LedgerColumn,
+  index: number
+) {
+  const user = await currentUser();
+  if (!user) redirect("/signin");
+  const session = await ownSession(sessionId, user.id);
+  if (!session || session.outcome) return;
+  const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
+  const items = [...(ledger[column] ?? [])];
+  const [item] = items.splice(index, 1);
+  if (item === undefined) return;
+  const next = LEDGER_ORDER[(LEDGER_ORDER.indexOf(column) + 1) % LEDGER_ORDER.length];
+  ledger[column] = items;
+  ledger[next] = [...(ledger[next] ?? []), item];
+  await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
+  revalidatePath(`/tavern/${sessionId}`);
+}
+
+export async function removeLedgerItemAction(
+  sessionId: number,
+  column: LedgerColumn,
+  index: number
+) {
+  const user = await currentUser();
+  if (!user) redirect("/signin");
+  const session = await ownSession(sessionId, user.id);
+  if (!session || session.outcome) return;
+  const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
+  const items = [...(ledger[column] ?? [])];
+  items.splice(index, 1);
+  ledger[column] = items;
+  await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
+  revalidatePath(`/tavern/${sessionId}`);
+}
+
 /** Every visit ends in one of four states (spec 5.7). */
 export async function endTavernSessionAction(
   sessionId: number,
@@ -50,12 +119,20 @@ export async function endTavernSessionAction(
   let draftMessage: string | null = null;
   if (outcome === "invite") {
     const history = await listMessages(session.conversationId);
+    const transcript = history.map((m) => ({
+      speaker: (m.senderKind === "bartender" ? "bartender" : "you") as "you" | "bartender",
+      content: m.content,
+    }));
+    const l = session.ledger;
+    if (l && (l.said?.length || l.assuming?.length || l.unknown?.length)) {
+      transcript.push({
+        speaker: "you",
+        content: `My ledger — Said (facts): ${l.said?.join("; ") || "none"}. Assuming: ${l.assuming?.join("; ") || "none"}. Unknown: ${l.unknown?.join("; ") || "none"}.`,
+      });
+    }
     draftMessage =
       (await bartenderInviteDraft({
-        transcript: history.map((m) => ({
-          speaker: m.senderKind === "bartender" ? "bartender" : "you",
-          content: m.content,
-        })),
+        transcript,
       })) ??
       "I've been chewing on something and want to bring it to the group: here's what I know, here's what I'm unsure about, and here's the one thing I'd like a read on.";
   }

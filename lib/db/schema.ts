@@ -260,6 +260,13 @@ export const tavernSessions = reprise.table("tavern_sessions", {
     .notNull()
     .references(() => conversations.id),
   outcome: tavernOutcome("outcome"),
+  // The thinking ledger: the said/inferred/unknown discipline as a working
+  // surface the student sorts while they talk. Private, like the session.
+  ledger: jsonb("ledger").$type<{
+    said?: string[];
+    assuming?: string[];
+    unknown?: string[];
+  }>(),
   // "Invite" produces a drafted message to bring back to the project —
   // never auto-shared (spec 5.7).
   draftMessage: text("draft_message"),

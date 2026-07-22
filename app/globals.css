@@ -281,6 +281,38 @@ main.main-canvas::before {
   font-weight: 700;
 }
 
+/* Bartender presence — a slow, unhurried pulse. He's in no rush. */
+.bartender-pour {
+  animation: pour 1.6s ease-in-out infinite;
+}
+
+@keyframes pour {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Ledger cards tilt faintly, like coasters on a bar. */
+.ledger-item {
+  transition: transform 120ms ease;
+}
+
+.ledger-item:nth-child(odd) {
+  transform: rotate(-0.4deg);
+}
+
+.ledger-item:nth-child(even) {
+  transform: rotate(0.35deg);
+}
+
+.ledger-item:hover {
+  transform: rotate(0deg);
+}
+
 /* Forth's stacked-coil brand mark, borrowed with respect. */
 .brand-mark {
   position: relative;
