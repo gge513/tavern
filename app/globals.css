@@ -1,17 +1,36 @@
 @import "tailwindcss";
 
+/*
+ * The Forth visual language, applied to Reprise (spec: "modular and
+ * reskinnable ... so Forth can later supply visual language"). Parchment
+ * paper, deep green ink, moss/clay/gold, Georgia display serif, mono
+ * eyebrows, hard paper-cutout shadows, and the sword cursor.
+ *
+ * Variable names are Reprise's originals so every component keeps working;
+ * only the values speak Forth.
+ */
 :root {
-  --bg: #16130f;
-  --bg-raised: #201c16;
-  --bg-hover: #2a251d;
-  --border: #383025;
-  --text: #ece5d8;
-  --text-dim: #9c9080;
-  --amber: #d9a441;
-  --amber-dim: #8a6a2f;
-  --green: #7fa650;
-  --red: #c46a4f;
-  --blue: #7d9bb8;
+  --bg: #e9d9b7; /* paper */
+  --bg-raised: #f5e8c9; /* paper-bright */
+  --bg-hover: #e4cca0; /* canvas card */
+  --border: #9d855b; /* rule */
+  --border-dark: #665034; /* rule-dark */
+  --text: #182019; /* ink */
+  --text-dim: #475044; /* ink-soft */
+  --amber: #a84732; /* clay — the accent formerly known as amber */
+  --amber-dim: #c58b2b; /* gold */
+  --green: #5b6f3a; /* moss */
+  --red: #8d2f25; /* warning */
+  --blue: #596b69; /* slate */
+  --night: #121814;
+  --night-soft: #202a20;
+  --paper-on-night: #e9d9b7;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: Tahoma, Verdana, "Segoe UI", sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --shadow-small: 4px 4px 0 rgba(46, 34, 20, 0.28);
+  --shadow-btn: 3px 3px 0 #725537;
+  --cursor-sword: url("/cursors/sword.svg") 2 2, auto;
 }
 
 @theme inline {
@@ -26,64 +45,136 @@
   --color-green: var(--green);
   --color-red: var(--red);
   --color-blue: var(--blue);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-night: var(--night);
+  --color-parchment: var(--paper-on-night);
 }
 
 html {
-  color-scheme: dark;
+  background: var(--text);
+  color-scheme: light;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  -webkit-font-smoothing: antialiased;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  cursor: var(--cursor-sword);
 }
+
+button:not(:disabled),
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+a {
+  cursor: var(--cursor-sword);
+}
+
+input:not([type="checkbox"]),
+textarea {
+  cursor: text;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 3px solid #e09a54;
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  text-wrap: balance;
+  color: #20271e;
+}
+
+h1 {
+  text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.48);
+}
+
+/* Contour-line background art, top right — straight from the realm. */
+main.main-canvas {
+  position: relative;
+}
+
+main.main-canvas::before {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 310px;
+  background-image: url("data:image/svg+xml,%3Csvg width='380' height='310' viewBox='0 0 380 310' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23203128' stroke-width='1'%3E%3Cpath opacity='.04' d='M381 36C304 5 241 6 190 44c-55 41-47 82-101 104-44 18-78 4-93 34-20 41 43 112 105 126'/%3E%3Cpath opacity='.04' d='M381 66c-61-27-116-26-161 4-52 35-49 72-99 96-41 19-75 12-85 38-13 34 36 82 84 102'/%3E%3Cpath opacity='.04' d='M381 96c-51-22-96-18-130 6-45 31-44 62-85 84-35 18-64 17-70 38-9 26 27 61 62 78'/%3E%3Cpath opacity='.04' d='M381 128c-39-17-74-12-98 8-34 27-33 51-63 68-27 15-48 15-52 31-6 20 19 45 45 58'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  pointer-events: none;
+  content: "";
+}
+
+/* ——— shared surfaces ——— */
 
 .card {
   background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+  border-radius: 0;
+  box-shadow: var(--shadow-small);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  background: var(--amber);
-  color: #1c1710;
-  font-weight: 600;
-  font-size: 0.875rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: filter 120ms;
+  min-height: 40px;
+  background: #263523;
+  color: #ffe4a8;
+  border: 2px solid var(--text);
+  border-radius: 0;
+  padding: 0 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-btn);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .btn:hover {
-  filter: brightness(1.1);
+  background: #3d4b2f;
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #725537;
 }
 
 .btn:disabled {
   opacity: 0.5;
-  cursor: default;
+  transform: none;
+  box-shadow: var(--shadow-btn);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-color: var(--border-dark);
 }
 
 .btn-ghost:hover {
   background: var(--bg-hover);
+  color: var(--text);
 }
 
 .input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: #fffaf0;
+  border: 2px solid var(--border-dark);
+  border-radius: 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   color: var(--text);
@@ -91,37 +182,132 @@ body {
 }
 
 .input:focus {
-  outline: 2px solid var(--amber-dim);
+  outline: 3px solid #e09a54;
   outline-offset: 0;
-  border-color: var(--amber-dim);
 }
 
 .label {
   display: block;
-  font-size: 0.75rem;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  color: var(--blue);
   margin-bottom: 0.35rem;
 }
 
 .tag {
   display: inline-block;
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1.5px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--bg-raised);
   color: var(--text-dim);
 }
 
 .tag-amber {
-  border-color: var(--amber-dim);
+  border-color: var(--amber);
   color: var(--amber);
+  background: #f2ddc4;
 }
 
 .ai-label {
-  font-size: 0.7rem;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--amber);
+}
+
+/* ——— the night rail (top nav wears Forth's side-rail colors) ——— */
+
+.top-rail {
+  background: var(--night);
+  color: var(--paper-on-night);
+  border-bottom: 3px solid var(--border-dark);
+}
+
+.top-rail .rail-link {
+  position: relative;
+  color: #c7cec6;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 6px 9px;
+  border-radius: 4px;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.top-rail .rail-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fffaf0;
+}
+
+.top-rail .brand-word {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #fffaf0;
+}
+
+.top-rail .brand-word em {
+  color: #df755e;
+  font-style: normal;
+}
+
+.rail-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  background: var(--amber);
+  border: 1.5px solid var(--night);
+  color: #fffaf0;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Forth's stacked-coil brand mark, borrowed with respect. */
+.brand-mark {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  width: 26px;
+  height: 25px;
+}
+
+.brand-mark span {
+  display: block;
+  width: 24px;
+  height: 7px;
+  margin-top: -1px;
+  border: 2px solid #c58b2b;
+  border-radius: 50%;
+  transform: rotate(-3deg);
+}
+
+.brand-mark span:nth-child(2) {
+  width: 18px;
+  transform: rotate(4deg);
+}
+
+.brand-mark span:nth-child(3) {
+  width: 11px;
+  transform: rotate(-7deg);
 }

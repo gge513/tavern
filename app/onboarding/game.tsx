@@ -80,7 +80,7 @@ export function Game() {
 
   return (
     <div className="max-w-xl mx-auto pt-10 space-y-6">
-      <div className="h-1.5 rounded bg-raised overflow-hidden">
+      <div className="h-2 border-2 border-line bg-raised overflow-hidden">
         <div className="h-full bg-amber transition-all" style={{ width: `${progress}%` }} />
       </div>
 
@@ -205,7 +205,7 @@ export function Game() {
                       })
                     }
                   />
-                  <div className="flex-1 h-2 rounded bg-bg overflow-hidden">
+                  <div className="flex-1 h-2 border border-line bg-bg overflow-hidden">
                     <div className="h-full bg-amber-dim" style={{ width: `${pct}%` }} />
                   </div>
                 </div>

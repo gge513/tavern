@@ -21,41 +21,37 @@ export async function SiteNav() {
   const onboarded = user?.onboarding === "done";
 
   return (
-    <header className="border-b border-line bg-raised/60">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-5">
-        <Link href="/" className="font-bold tracking-tight text-lg">
-          <span className="text-amber">Reprise</span>
+    <header className="top-rail">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-5">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="brand-mark" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </span>
+          <span className="brand-word">
+            Repr<em>i</em>se
+          </span>
         </Link>
         {user && onboarded && (
-          <nav className="flex items-center gap-4 text-sm text-dim">
-            <Link href="/map" className="hover:text-ink">Cohort map</Link>
-            <Link href="/messages" className="hover:text-ink">Messages</Link>
-            <Link href="/channels" className="hover:text-ink">Channels</Link>
-            <Link href="/projects" className="hover:text-ink">Projects</Link>
-            <Link href="/tavern" className="hover:text-ink">Tavern</Link>
-            <Link href="/search" className="hover:text-ink">Search</Link>
+          <nav className="flex items-center gap-1">
+            <Link href="/map" className="rail-link">Map</Link>
+            <Link href="/messages" className="rail-link">Messages</Link>
+            <Link href="/channels" className="rail-link">Channels</Link>
+            <Link href="/projects" className="rail-link">Projects</Link>
+            <Link href="/tavern" className="rail-link">Tavern</Link>
+            <Link href="/search" className="rail-link">Search</Link>
           </nav>
         )}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           {user ? (
             <>
-              <Link
-                href="/notifications"
-                className="relative text-sm text-dim hover:text-ink"
-                title="Notifications"
-              >
+              <Link href="/notifications" className="rail-link flex items-center gap-1.5">
                 Alerts
-                {unread > 0 && (
-                  <span className="absolute -top-2 -right-3 bg-amber text-[10px] text-black font-bold rounded-full px-1.5 py-0.5">
-                    {unread}
-                  </span>
-                )}
+                {unread > 0 && <span className="rail-badge">{unread}</span>}
               </Link>
-              <Link
-                href={`/people/${user.id}`}
-                className="text-sm text-dim hover:text-ink"
-              >
-                {user.name}
+              <Link href={`/people/${user.id}`} className="rail-link">
+                {user.name.split(" ")[0]}
               </Link>
               <form
                 action={async () => {
@@ -63,11 +59,11 @@ export async function SiteNav() {
                   await signOut({ redirectTo: "/" });
                 }}
               >
-                <button className="btn-ghost btn text-xs">Sign out</button>
+                <button className="rail-link">Sign out</button>
               </form>
             </>
           ) : (
-            <Link href="/signin" className="btn text-sm">
+            <Link href="/signin" className="rail-link">
               Sign in
             </Link>
           )}
