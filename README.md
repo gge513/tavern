@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Reprise
 
-## Getting Started
+*Slack moves messages. Reprise builds understanding.*
 
-First, run the development server:
+A communication platform for a cohort of ~60 coding students moving from solo
+GitHub submissions to shared projects. Students can see each other's code but
+not each other — Reprise fixes the second half: collaborator profiles generated
+from real public GitHub work, a matching engine that explains itself, an AI
+bartender that introduces people and then gets out of the way, project spaces
+with structured conversation, and a private tavern for thinking through
+confusion before bringing it to the group.
 
-```bash
+## The core journey
+
+GitHub sign-in → hedged draft profile (you approve every word before anyone
+sees it) → a short onboarding game that builds your collaborator map →
+suggested collaborators (most alike + most complementary, each with a
+plain-language why) → bartender-led introduction → project discovery → join
+request → project communication → the tavern when you need it.
+
+## Feature map
+
+**Discovery spine:** GitHub-generated profiles (public data only, approval
+gate), 11-beat onboarding game with a three-dimension collaborator map
+(explainable, editable percentages), cohort map with filters, matching with
+explanations, DMs with bartender introductions (one next step, then it steps
+back).
+
+**Cohort baseline:** public channels (create / rename / archive), an
+admin-only #announcements channel, in-app notifications on @mention and DM,
+keyword search over everything you can see (tavern excluded by design),
+30-day+ message persistence, ~2s polling on the message path.
+
+**Projects:** directory seeded from week-one projects, join requests carrying
+profile + reason + intent + a clearly-labeled AI fit suggestion, leader
+accept/decline/follow-up, topic threads, five structured conversation types
+(Question / Decision / Blocker / Request for help / Action item — optional,
+one tap), a cadence-contract card, and each new member's onboarding
+"assumption" posted as their first Question.
+
+**The tavern:** a private room with the bartender. Said / Inferring / Unknown
+discipline on anything interpersonal; every visit ends in Act, Invite (with a
+drafted message you own), Clarify, or Release. Never auto-shared, never
+searchable.
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind 4 · Drizzle ORM · Neon
+Postgres · Auth.js v5 (GitHub OAuth + email/password fallback) · Anthropic API
+(claude-opus-4-8) for profile drafts, match explanations, and the bartender.
+Every AI call site degrades to non-AI fallbacks — the loop never blocks on the
+API.
+
+PM-platform integration: accounts are keyed by the same email (and GitHub
+identity) as the cohort's PM platform, per the course integration requirement.
+
+## Run it
+
+```sh
+npm install
+cp .env.example .env.local   # fill in values
+set -a; source .env.local; set +a
+npm run db:push              # create tables (reprise pg schema)
+npm run db:seed              # seed demo cohort, projects, channels
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Seeded people are fictional and labeled "seeded demo profile" everywhere they
+appear. Real profiles, matches, and conversations accumulate as the cohort
+signs in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Test plan
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run build` — typecheck + production build
+- `npx tsx scripts/integration-smoke.mts` — DM creation/persistence, access
+  control (participant vs outsider), channel vs announcements posting rules,
+  mention notifications
+- `npx tsx scripts/ai-smoke.mts` — live Anthropic call sites (needs
+  `ANTHROPIC_API_KEY`)
+- Manual loop: sign up → onboarding → map → introduction → join request →
+  project chat with structured types → tavern → reload and confirm persistence
