@@ -237,7 +237,11 @@ function MessageRow(props: {
     >
       <div className="flex items-center gap-2 mb-1">
         <span className={`text-xs font-semibold ${isBartender ? "text-amber" : "text-dim"}`}>
-          {isBartender ? "The Bartender" : m.senderName ?? "Unknown"}
+          {isBartender
+            ? "The Bartender"
+            : m.senderKind === "system"
+              ? "The house"
+              : m.senderName ?? "A former member"}
         </span>
         {m.senderIsSeed && <span className="tag">seeded</span>}
         {s && (
