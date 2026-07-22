@@ -281,6 +281,110 @@ main.main-canvas::before {
   font-weight: 700;
 }
 
+/* ——— the bar rail: quiet expandable controls under the tavern chat ——— */
+
+.bar-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: baseline;
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.bar-menu summary {
+  display: inline-block;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: var(--cursor-sword);
+  user-select: none;
+}
+
+.bar-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.bar-menu summary::before {
+  content: "▸ ";
+  color: var(--amber);
+}
+
+.bar-menu[open] summary::before {
+  content: "▾ ";
+}
+
+.bar-menu summary:hover {
+  color: var(--text);
+}
+
+.bar-menu > div {
+  margin-top: 0.6rem;
+}
+
+.rail-action {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.rail-action:hover {
+  color: var(--text);
+}
+
+/* Ledger — one quiet card, hairline sections, left-accent items. */
+.ledger-section + .ledger-section {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.ledger-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 0.3rem 0.4rem 0.3rem 0.55rem;
+  border-left: 3px solid var(--border);
+  background: rgba(255, 250, 240, 0.55);
+}
+
+.ledger-entry + .ledger-entry {
+  margin-top: 0.3rem;
+}
+
+.ledger-add {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.ledger-add::placeholder {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.ledger-add:focus {
+  outline: none;
+  border-bottom-color: var(--amber);
+}
+
 /* Bartender presence — a slow, unhurried pulse. He's in no rush. */
 .bartender-pour {
   animation: pour 1.6s ease-in-out infinite;

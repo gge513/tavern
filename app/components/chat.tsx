@@ -140,7 +140,9 @@ export function Chat(props: {
 
       {props.canPost ? (
         <div className="pt-3 space-y-2">
-          {props.prompts && props.prompts.length > 0 && (
+          {props.prompts &&
+            props.prompts.length > 0 &&
+            !msgs.some((m) => m.senderKind === "user") && (
             <div className="flex flex-wrap gap-2">
               {props.prompts.map((p) => (
                 <button
@@ -152,8 +154,8 @@ export function Chat(props: {
                   {p}
                 </button>
               ))}
-            </div>
-          )}
+              </div>
+            )}
           {props.showStructured && (
             <div className="flex flex-wrap gap-2 items-center">
               {STRUCTURED.map((s) => (

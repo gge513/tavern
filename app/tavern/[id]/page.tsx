@@ -26,18 +26,16 @@ const PROMPTS = [
   "What I know directly:",
   "What I'm assuming:",
   "The outcome I want:",
-  "Who might have missing context:",
 ];
 
 const LEDGER_META: {
   key: LedgerColumn;
   title: string;
-  hint: string;
   color: string;
 }[] = [
-  { key: "said", title: "Said", hint: "what actually happened or was said", color: "var(--green)" },
-  { key: "assuming", title: "Assuming", hint: "your reading of it", color: "var(--amber)" },
-  { key: "unknown", title: "Unknown", hint: "open questions", color: "var(--blue)" },
+  { key: "said", title: "Said", color: "var(--green)" },
+  { key: "assuming", title: "Assuming", color: "var(--amber)" },
+  { key: "unknown", title: "Unknown", color: "var(--blue)" },
 ];
 
 const LAST_CALL: {
@@ -105,8 +103,6 @@ export default async function TavernSessionPage(props: {
       )
     );
 
-  // Who could be invited: cohort members with approved profiles, minus
-  // whoever is already at the table.
   let invitable: { id: number; name: string; isSeed: boolean }[] = [];
   if (isOwner && open && !session.shared) {
     const atTable = new Set([user.id, ...others.map((o) => o.id)]);
@@ -120,23 +116,23 @@ export default async function TavernSessionPage(props: {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-baseline gap-3 flex-wrap">
         <Link href="/tavern" className="text-xs text-dim hover:text-ink">← tavern</Link>
-        <h1 className="text-xl">{session.shared ? "A table for two" : "Private session"}</h1>
-        {session.shared ? (
-          <span className="tag tag-amber">
-            shared with {others.map((o) => o.name).join(", ") || "…"} — visible to both of you
-          </span>
-        ) : (
-          <span className="tag">only you can see this</span>
-        )}
+        <h1 className="text-xl">
+          {session.shared ? "A table for two" : "Private session"}
+        </h1>
+        <span className="text-xs text-dim">
+          {session.shared
+            ? `with ${others.map((o) => o.name).join(", ")} — visible to both of you`
+            : "only you can see this"}
+        </span>
         {session.outcome && (
           <span className="tag tag-amber capitalize">ended: {session.outcome}</span>
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_290px] gap-5 items-start">
-        <div className="space-y-4">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_270px] gap-6 items-start">
+        <div className="space-y-3">
           <Chat
             conversationId={session.conversationId}
             currentUserId={user.id}
@@ -144,71 +140,76 @@ export default async function TavernSessionPage(props: {
             readOnlyReason="This session has ended. Open a new one whenever you need the room."
             placeholder={
               session.shared
-                ? "Think out loud together — ring the bell when you want the bartender's read."
-                : "Think out loud — the bartender keeps the said/assuming/unknown discipline with you."
+                ? "Think out loud together…"
+                : "Think out loud — what happened, what do you actually know?"
             }
             bartenderTyping={!session.shared}
             prompts={open && !session.shared ? PROMPTS : undefined}
           />
 
-          {open && session.shared && (
-            <form action={summonBartenderAction.bind(null, sessionId)}>
-              <button className="btn">🔔 Ring the bell — bartender&apos;s read</button>
-              <p className="text-xs text-dim mt-1.5">
-                He&apos;ll name each perspective, what you already agree on, what&apos;s
-                unresolved, and one next move. Then he goes back to the bar.
-              </p>
-            </form>
-          )}
-
-          {isOwner && open && !session.shared && invitable.length > 0 && (
-            <div className="card p-4 space-y-2">
-              <div className="label">Pull up a second stool</div>
-              <p className="text-xs text-dim">
-                Invite a collaborator for a live thinking session at this table.
-                Fair warning: they&apos;ll see <strong>everything already said
-                here</strong>, and the bartender switches to facilitator — he&apos;ll
-                only speak when you ring the bell.
-              </p>
-              <form
-                action={inviteToTableAction.bind(null, sessionId)}
-                className="flex gap-2"
-              >
-                <select className="input text-sm" name="userId" required defaultValue="">
-                  <option value="" disabled>
-                    Choose a collaborator…
-                  </option>
-                  {invitable.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                      {p.isSeed ? " (seeded demo — won't reply)" : ""}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn text-xs shrink-0">Invite</button>
-              </form>
-            </div>
-          )}
-
           {open && (
-            <div className="space-y-2">
-              <div className="label">Last call — every visit ends one of four ways</div>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {LAST_CALL.map((o) => (
-                  <form key={o.key} action={endTavernSessionAction.bind(null, sessionId, o.key)}>
-                    <button
-                      className="card p-3 w-full text-left hover:bg-hover transition-colors disabled:opacity-50"
-                      disabled={!isOwner}
-                      title={isOwner ? undefined : "The session's owner calls last call"}
+            <div className="bar-rail">
+              {session.shared && (
+                <form action={summonBartenderAction.bind(null, sessionId)}>
+                  <button className="rail-action" title="He'll name each perspective, the agreed ground, the unresolved, and one next move.">
+                    🔔 ring for the bartender
+                  </button>
+                </form>
+              )}
+
+              {isOwner && !session.shared && invitable.length > 0 && (
+                <details className="bar-menu">
+                  <summary>Pull up a second stool</summary>
+                  <div className="max-w-md space-y-2">
+                    <p className="text-xs text-dim">
+                      A live thinking session for two. They&apos;ll see everything
+                      already said here, and the bartender switches to
+                      facilitator — speaking only when you ring the bell.
+                    </p>
+                    <form
+                      action={inviteToTableAction.bind(null, sessionId)}
+                      className="flex gap-2"
                     >
-                      <span className="font-semibold text-sm" style={{ fontFamily: "var(--serif)" }}>
-                        {o.title}
-                      </span>
-                      <span className="block text-xs text-dim mt-1">{o.desc}</span>
-                    </button>
-                  </form>
-                ))}
-              </div>
+                      <select className="input text-sm" name="userId" required defaultValue="">
+                        <option value="" disabled>
+                          Choose a collaborator…
+                        </option>
+                        {invitable.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                            {p.isSeed ? " (seeded demo — won't reply)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <button className="btn text-xs shrink-0">Invite</button>
+                    </form>
+                  </div>
+                </details>
+              )}
+
+              {isOwner && (
+                <details className="bar-menu">
+                  <summary>Last call</summary>
+                  <div className="grid sm:grid-cols-2 gap-2 max-w-lg">
+                    {LAST_CALL.map((o) => (
+                      <form
+                        key={o.key}
+                        action={endTavernSessionAction.bind(null, sessionId, o.key)}
+                      >
+                        <button className="card p-3 w-full text-left hover:bg-hover transition-colors">
+                          <span
+                            className="font-semibold text-sm"
+                            style={{ fontFamily: "var(--serif)" }}
+                          >
+                            {o.title}
+                          </span>
+                          <span className="block text-xs text-dim mt-1">{o.desc}</span>
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           )}
 
@@ -226,65 +227,65 @@ export default async function TavernSessionPage(props: {
           )}
         </div>
 
-        <aside className="space-y-3 lg:sticky lg:top-4">
-          <div className="label mb-0">The ledger{session.shared ? " — shared" : ""}</div>
-          <p className="text-xs text-dim -mt-1">
-            Sort as you talk. Tap ⟳ to reclassify a card — noticing a
-            &quot;fact&quot; was actually a reading is the whole game.
-          </p>
-          {LEDGER_META.map((col) => (
-            <div key={col.key} className="card p-3 space-y-2">
-              <div className="flex items-baseline gap-2">
-                <span
-                  className="text-sm font-bold"
+        <aside className="lg:sticky lg:top-4">
+          <div className="card p-4">
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="label mb-0">
+                Ledger{session.shared ? " · shared" : ""}
+              </span>
+            </div>
+            <p className="text-[11px] text-dim leading-snug mb-3">
+              Sort as you talk; ⟳ reclassifies. Noticing a &quot;fact&quot; was a
+              reading is the whole game.
+            </p>
+            {LEDGER_META.map((col) => (
+              <div key={col.key} className="ledger-section">
+                <div
+                  className="text-sm font-bold mb-1.5"
                   style={{ fontFamily: "var(--serif)", color: col.color }}
                 >
                   {col.title}
-                </span>
-                <span className="text-[10px] text-dim">{col.hint}</span>
-              </div>
-              {(ledger[col.key] ?? []).map((item, i) => (
-                <div
-                  key={`${item}-${i}`}
-                  className="ledger-item flex items-start gap-1.5 text-xs bg-bg border p-2"
-                  style={{ borderColor: col.color }}
-                >
-                  <span className="flex-1 leading-snug">{item}</span>
-                  {open && (
-                    <span className="flex gap-1 shrink-0">
-                      <form action={cycleLedgerItemAction.bind(null, sessionId, col.key, i)}>
-                        <button
-                          className="text-dim hover:text-ink"
-                          title="Reclassify (said → assuming → unknown)"
-                        >
-                          ⟳
-                        </button>
-                      </form>
-                      <form action={removeLedgerItemAction.bind(null, sessionId, col.key, i)}>
-                        <button className="text-dim hover:text-red" title="Remove">
-                          ×
-                        </button>
-                      </form>
-                    </span>
-                  )}
                 </div>
-              ))}
-              {open && (
-                <form
-                  action={addLedgerItemAction.bind(null, sessionId, col.key)}
-                  className="flex gap-1"
-                >
-                  <input
-                    className="input text-xs py-1"
-                    name="text"
-                    placeholder={`add to ${col.title.toLowerCase()}…`}
-                    maxLength={200}
-                  />
-                  <button className="btn btn-ghost text-xs px-2 min-h-8">+</button>
-                </form>
-              )}
-            </div>
-          ))}
+                {(ledger[col.key] ?? []).map((item, i) => (
+                  <div
+                    key={`${item}-${i}`}
+                    className="ledger-entry"
+                    style={{ borderLeftColor: col.color }}
+                  >
+                    <span className="flex-1">{item}</span>
+                    {open && (
+                      <span className="flex gap-1.5 shrink-0">
+                        <form action={cycleLedgerItemAction.bind(null, sessionId, col.key, i)}>
+                          <button
+                            className="text-dim hover:text-ink"
+                            title="Reclassify (said → assuming → unknown)"
+                          >
+                            ⟳
+                          </button>
+                        </form>
+                        <form action={removeLedgerItemAction.bind(null, sessionId, col.key, i)}>
+                          <button className="text-dim hover:text-red" title="Remove">
+                            ×
+                          </button>
+                        </form>
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {open && (
+                  <form action={addLedgerItemAction.bind(null, sessionId, col.key)}>
+                    <input
+                      className="ledger-add"
+                      name="text"
+                      placeholder={`+ add, then Enter`}
+                      maxLength={200}
+                      autoComplete="off"
+                    />
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
         </aside>
       </div>
     </div>
