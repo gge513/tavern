@@ -63,6 +63,7 @@ cp .env.example .env.local   # fill in values
 set -a; source .env.local; set +a
 npm run db:push              # create tables (reprise pg schema)
 npm run db:seed              # seed demo cohort, projects, channels
+npm run db:roster            # reserve unclaimed accounts for the real cohort
 npm run dev
 ```
 

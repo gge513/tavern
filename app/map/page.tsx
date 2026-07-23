@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, isNotNull, notInArray } from "drizzle-orm";
 
 import { currentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
@@ -82,6 +82,28 @@ export default async function MapPage(props: {
     return true;
   });
 
+  // The honest tally: real cohort members (reserved from the course roster
+  // or mid-onboarding) who haven't approved a profile yet. Seeds excluded.
+  const arrived = await db
+    .select({ userId: profiles.userId })
+    .from(profiles)
+    .where(eq(profiles.approved, true));
+  const [notYet] = await db
+    .select({ n: count() })
+    .from(users)
+    .where(
+      and(
+        eq(users.isSeed, false),
+        isNotNull(users.githubLogin),
+        arrived.length
+          ? notInArray(
+              users.id,
+              arrived.map((a) => a.userId)
+            )
+          : undefined
+      )
+    );
+
   return (
     <div className="space-y-8">
       <div>
@@ -89,6 +111,13 @@ export default async function MapPage(props: {
         <p className="text-sm text-dim mt-1">
           {rows.length - 1 >= 0 ? rows.length - 1 : 0} visible collaborators.
           Suggestions are suggestions — never assignments.
+          {(notYet?.n ?? 0) > 0 && (
+            <>
+              {" "}
+              <span className="text-amber">{notYet.n} cohort members</span>
+              {" haven't come to the bar yet — they appear here the moment they sign in and approve a profile."}
+            </>
+          )}
         </p>
       </div>
 

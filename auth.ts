@@ -70,6 +70,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 set: {
                   // Never clobber an existing name with the login fallback.
                   ...(p.name ? { name: p.name } : {}),
+                  // Claiming a reserved roster row: attach the email that
+                  // keys the PM-platform integration.
+                  ...(p.email ? { email: p.email.toLowerCase() } : {}),
                   avatarUrl: p.avatar_url ?? null,
                 },
               })
