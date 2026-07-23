@@ -24,13 +24,13 @@ export async function SiteNav() {
     <header className="top-rail">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-5">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="brand-mark" aria-hidden>
-            <span />
-            <span />
-            <span />
+          <span className="brand-tankard" aria-hidden>
+            <span className="brand-tankard-foam" />
+            <span className="brand-tankard-body" />
+            <span className="brand-tankard-handle" />
           </span>
           <span className="brand-word">
-            Repr<em>i</em>se
+            T<em>a</em>vern
           </span>
         </Link>
         {user && onboarded && (
@@ -39,7 +39,7 @@ export async function SiteNav() {
             <Link href="/messages" className="rail-link">Messages</Link>
             <Link href="/channels" className="rail-link">Channels</Link>
             <Link href="/projects" className="rail-link">Projects</Link>
-            <Link href="/tavern" className="rail-link">Tavern</Link>
+            <Link href="/snug" className="rail-link">The Snug</Link>
             <Link href="/search" className="rail-link">Search</Link>
           </nav>
         )}

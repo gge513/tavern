@@ -1,14 +1,14 @@
-# Reprise
+# Tavern
 
-*Slack moves messages. Reprise builds understanding.*
+*Slack moves messages. The Tavern builds understanding.*
 
 A communication platform for a cohort of ~60 coding students moving from solo
 GitHub submissions to shared projects. Students can see each other's code but
-not each other — Reprise fixes the second half: collaborator profiles generated
-from real public GitHub work, a matching engine that explains itself, an AI
-bartender that introduces people and then gets out of the way, project spaces
-with structured conversation, and a private tavern for thinking through
-confusion before bringing it to the group.
+not each other — the Tavern fixes the second half: collaborator profiles
+generated from real public GitHub work, a matching engine that explains
+itself, a bartender who introduces people and then gets out of the way,
+project tables with structured conversation, and the snug — a private room in
+the back for thinking through confusion before bringing it to the group.
 
 ## The core journey
 
@@ -16,19 +16,19 @@ GitHub sign-in → hedged draft profile (you approve every word before anyone
 sees it) → a short onboarding game that builds your collaborator map →
 suggested collaborators (most alike + most complementary, each with a
 plain-language why) → bartender-led introduction → project discovery → join
-request → project communication → the tavern when you need it.
+request → project communication → the snug when you need it.
 
 ## Feature map
 
 **Discovery spine:** GitHub-generated profiles (public data only, approval
 gate), 11-beat onboarding game with a three-dimension collaborator map
 (explainable, editable percentages), cohort map with filters, matching with
-explanations, DMs with bartender introductions (one next step, then it steps
+explanations, DMs with bartender introductions (one next step, then he steps
 back).
 
 **Cohort baseline:** public channels (create / rename / archive), an
 admin-only #announcements channel, in-app notifications on @mention and DM,
-keyword search over everything you can see (tavern excluded by design),
+keyword search over everything you can see (the snug excluded by design),
 30-day+ message persistence, ~2s polling on the message path.
 
 **Projects:** directory seeded from week-one projects, join requests carrying
@@ -38,10 +38,11 @@ accept/decline/follow-up, topic threads, five structured conversation types
 one tap), a cadence-contract card, and each new member's onboarding
 "assumption" posted as their first Question.
 
-**The tavern:** a private room with the bartender. Said / Inferring / Unknown
+**The snug:** a private room with the bartender. Said / Inferring / Unknown
 discipline on anything interpersonal; every visit ends in Act, Invite (with a
-drafted message you own), Clarify, or Release. Never auto-shared, never
-searchable.
+drafted message you own), Clarify, or Release. Invite a collaborator to make
+it a shared table — a live thinking session where the bartender facilitates
+only when you ring the bell. Never auto-shared, never searchable.
 
 ## Stack
 
@@ -78,4 +79,5 @@ signs in.
 - `npx tsx scripts/ai-smoke.mts` — live Anthropic call sites (needs
   `ANTHROPIC_API_KEY`)
 - Manual loop: sign up → onboarding → map → introduction → join request →
-  project chat with structured types → tavern → reload and confirm persistence
+  project chat with structured types → the snug → reload and confirm
+  persistence

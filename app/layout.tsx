@@ -4,9 +4,9 @@ import "./globals.css";
 import { SiteNav } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
-  title: "Reprise",
+  title: "Tavern",
   description:
-    "Slack moves messages. Reprise builds understanding — meet the people behind the pull requests.",
+    "Slack moves messages. The Tavern builds understanding — meet the people behind the pull requests.",
 };
 
 export default function RootLayout({

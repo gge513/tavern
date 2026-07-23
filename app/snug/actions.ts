@@ -38,7 +38,7 @@ export async function openTavernSessionAction() {
       "Quiet corner, just us — nothing here is shared unless you choose to share it. What happened? Start with the parts you know directly: what was actually said or done, before any reading of it.",
   });
 
-  redirect(`/tavern/${session.id}`);
+  redirect(`/snug/${session.id}`);
 }
 
 export type LedgerColumn = "said" | "assuming" | "unknown";
@@ -104,10 +104,10 @@ export async function inviteToTableAction(sessionId: number, formData: FormData)
       userId: inviteeId,
       kind: "introduction",
       content: `${user.name} invited you to a table in the tavern — a live thinking session.`,
-      href: `/tavern/${sessionId}`,
+      href: `/snug/${sessionId}`,
     });
   }
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }
 
 /** The bell: either participant summons the facilitator. */
@@ -156,7 +156,7 @@ export async function summonBartenderAction(sessionId: number) {
     .update(conversations)
     .set({ lastActivityAt: new Date() })
     .where(eq(conversations.id, session.conversationId));
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }
 
 /** Add a card to the thinking ledger. */
@@ -174,7 +174,7 @@ export async function addLedgerItemAction(
   const ledger = { said: [], assuming: [], unknown: [], ...(session.ledger ?? {}) };
   ledger[column] = [...(ledger[column] ?? []), text];
   await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }
 
 /**
@@ -198,7 +198,7 @@ export async function cycleLedgerItemAction(
   ledger[column] = items;
   ledger[next] = [...(ledger[next] ?? []), item];
   await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }
 
 export async function removeLedgerItemAction(
@@ -215,7 +215,7 @@ export async function removeLedgerItemAction(
   items.splice(index, 1);
   ledger[column] = items;
   await db.update(tavernSessions).set({ ledger }).where(eq(tavernSessions.id, sessionId));
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }
 
 /** Every visit ends in one of four states (spec 5.7). */
@@ -272,5 +272,5 @@ export async function endTavernSessionAction(
     content: closing[outcome],
   });
 
-  revalidatePath(`/tavern/${sessionId}`);
+  revalidatePath(`/snug/${sessionId}`);
 }

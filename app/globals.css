@@ -417,33 +417,44 @@ main.main-canvas::before {
   transform: rotate(0deg);
 }
 
-/* Forth's stacked-coil brand mark, borrowed with respect. */
-.brand-mark {
+/* The house tankard. */
+.brand-tankard {
   position: relative;
-  display: inline-flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  justify-content: flex-start;
+  display: inline-block;
   width: 26px;
-  height: 25px;
+  height: 26px;
 }
 
-.brand-mark span {
-  display: block;
-  width: 24px;
-  height: 7px;
-  margin-top: -1px;
+.brand-tankard-body {
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 15px;
+  height: 17px;
   border: 2px solid #c58b2b;
-  border-radius: 50%;
-  transform: rotate(-3deg);
+  border-radius: 2px 2px 4px 4px;
+  background: linear-gradient(#c58b2b 0 0) bottom / 100% 55% no-repeat;
 }
 
-.brand-mark span:nth-child(2) {
-  width: 18px;
-  transform: rotate(4deg);
+.brand-tankard-handle {
+  position: absolute;
+  right: 1px;
+  top: 11px;
+  width: 8px;
+  height: 9px;
+  border: 2px solid #c58b2b;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
 }
 
-.brand-mark span:nth-child(3) {
-  width: 11px;
-  transform: rotate(-7deg);
+.brand-tankard-foam {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 19px;
+  height: 7px;
+  background:
+    radial-gradient(circle 3.5px at 4px 4px, #fffaf0 97%, transparent) ,
+    radial-gradient(circle 4px at 10px 3px, #fffaf0 97%, transparent),
+    radial-gradient(circle 3px at 16px 4px, #fffaf0 97%, transparent);
 }

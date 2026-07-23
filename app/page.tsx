@@ -17,7 +17,7 @@ export default async function Home() {
           <span className="text-amber">pull requests</span>.
         </h1>
         <p className="text-dim text-lg leading-relaxed">
-          Slack moves messages. Reprise builds understanding. For a cohort of
+          Slack moves messages. The Tavern builds understanding. For a cohort of
           sixty students who can see each other&apos;s code but not each other:
           profiles from your real GitHub work, a matching engine that explains
           itself, a bartender that introduces you, and a quiet room to think
@@ -38,7 +38,7 @@ export default async function Home() {
           suggests (you approve every word before anyone sees it), play a short
           onboarding game, and get two suggested collaborators — one like you,
           one who covers what you don&apos;t. From there: conversations,
-          projects, and the tavern.
+          projects, and the snug — the quiet room in the back.
         </p>
       </div>
     </div>

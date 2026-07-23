@@ -333,7 +333,7 @@ async function main() {
           senderId: georgeId,
           senderKind: "user" as const,
           content:
-            "Welcome to Reprise. Staff posts land here; conversation happens in #general. First stop for everyone: finish onboarding and check your two suggested collaborators on the map.",
+            "Welcome to the Tavern. Staff posts land here; conversation happens in #general. First stop for everyone: finish onboarding and check your two suggested collaborators on the map.",
         });
       }
     }

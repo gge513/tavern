@@ -117,7 +117,7 @@ export default async function TavernSessionPage(props: {
   return (
     <div className="space-y-4">
       <div className="flex items-baseline gap-3 flex-wrap">
-        <Link href="/tavern" className="text-xs text-dim hover:text-ink">← tavern</Link>
+        <Link href="/snug" className="text-xs text-dim hover:text-ink">← the snug</Link>
         <h1 className="text-xl">
           {session.shared ? "A table for two" : "Private session"}
         </h1>

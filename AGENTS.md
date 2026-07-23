@@ -1,6 +1,6 @@
-# Reprise — agent guide
+# Tavern — agent guide
 
-Communication platform for the Hult cohort ("meet the people behind the pull
+The Tavern: communication platform for the Hult cohort ("meet the people behind the pull
 requests"). Next.js 16 App Router + TypeScript + Tailwind 4 + Drizzle ORM on
 Neon Postgres + Auth.js v5 + the Anthropic API.
 
@@ -43,6 +43,6 @@ Load env for scripts with: `set -a; source .env.local; set +a`.
 - Nothing about a student is cohort-visible before they approve it.
 - AI output is always labeled as suggestion/inference, hedged, never a verdict.
 - The bartender gives exactly one next step in introductions, then stops.
-- Tavern sessions are private to their owner and excluded from search.
+- Snug sessions are private to their owner and excluded from search.
 - Public GitHub data only — never request private repository access.
 - Tone everywhere: dry, direct, adult (users are 28+). No forced icebreaker energy.

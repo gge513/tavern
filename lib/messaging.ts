@@ -156,7 +156,7 @@ export function hrefFor(convo: {
     case "dm":
       return `/messages/${convo.id}`;
     case "tavern":
-      return `/tavern/${convo.id}`;
+      return `/snug/${convo.id}`;
     case "thread":
       return `/projects/${convo.projectId}/threads/${convo.id}`;
     default:
