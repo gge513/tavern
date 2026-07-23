@@ -119,7 +119,7 @@ export default async function TavernSessionPage(props: {
       <div className="flex items-baseline gap-3 flex-wrap">
         <Link href="/snug" className="text-xs text-dim hover:text-ink">← the snug</Link>
         <h1 className="text-xl">
-          {session.shared ? "A table for two" : "Private session"}
+          {session.shared ? "The snug, shared" : "The snug"}
         </h1>
         <span className="text-xs text-dim">
           {session.shared
@@ -159,12 +159,14 @@ export default async function TavernSessionPage(props: {
 
               {isOwner && !session.shared && invitable.length > 0 && (
                 <details className="bar-menu">
-                  <summary>Pull up a second stool</summary>
+                  <summary>Bring someone into the snug</summary>
                   <div className="max-w-md space-y-2">
                     <p className="text-xs text-dim">
-                      A live thinking session for two. They&apos;ll see everything
-                      already said here, and the bartender switches to
-                      facilitator — speaking only when you ring the bell.
+                      The snug seats two. Bring a collaborator in for a live
+                      thinking session — they&apos;ll see everything already said in
+                      this room, the room stays private to the two of you, and
+                      the bartender switches to facilitator, answering only the
+                      bell.
                     </p>
                     <form
                       action={inviteToTableAction.bind(null, sessionId)}

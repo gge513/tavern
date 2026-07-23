@@ -69,7 +69,7 @@ async function sessionForParticipant(sessionId: number, userId: number) {
 }
 
 /**
- * Pull a second stool up. Owner-only, explicit, and loud about what it means:
+ * Bring a collaborator into the snug. Owner-only, explicit, and loud about what it means:
  * the invitee sees everything already said in this session. The bartender
  * switches to facilitator mode and only speaks when summoned.
  */
@@ -96,14 +96,14 @@ export async function inviteToTableAction(sessionId: number, formData: FormData)
   await db.insert(messages).values({
     conversationId: session.conversationId,
     senderKind: "system",
-    content: `${user.name} pulled up a second stool — this is now a shared table with ${invitee.name}. Everything in this session is visible to both of you. Ring the bell when you want the bartender's read.`,
+    content: `${user.name} brought ${invitee.name} into the snug. The room is now shared between the two of you — everything said here is visible to both. Ring the bell when you want the bartender's read.`,
   });
 
   if (!invitee.isSeed) {
     await db.insert(notifications).values({
       userId: inviteeId,
       kind: "introduction",
-      content: `${user.name} invited you to a table in the tavern — a live thinking session.`,
+      content: `${user.name} brought you into the snug — a live thinking session for two.`,
       href: `/snug/${sessionId}`,
     });
   }

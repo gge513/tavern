@@ -232,7 +232,7 @@ Steer, over the course of the session, toward one of four endings — Act, Invit
 }
 
 /**
- * Call site 2d: the shared table — two students brainstorming in real time,
+ * Call site 2d: the shared snug — two students brainstorming in real time,
  * bartender as neutral facilitator, speaking only when summoned (the bell).
  */
 export async function bartenderTable(input: {
@@ -247,7 +247,7 @@ export async function bartenderTable(input: {
       max_tokens: 600,
       system: `${BARTENDER_CORE}
 
-Mode: shared table. ${input.names.join(" and ")} are working through something together at one table, in real time. You are the neutral facilitator, and you speak ONLY when they ring the bell — they just did.
+Mode: the snug, shared. ${input.names.join(" and ")} are working through something together in the private room in the back, in real time. Snugs have always had a bell for calling the bartender; you speak ONLY when they ring it — they just did.
 
 Read the exchange and do the facilitator's job, briefly: name each person's perspective in their own terms; name what they already agree is true; name what remains unresolved or unknown; then offer exactly one concrete next move for the conversation (a question one should ask the other, a decision they're circling, a thing to write down). Never declare a winner, never smooth over a real disagreement — unresolved is an honest state. Under 130 words, then go back to the bar.`,
       messages: [

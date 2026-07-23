@@ -72,7 +72,7 @@ export async function POST(
         eq(tavernSessions.ownerId, userId)
       ),
     });
-    // Solo sessions get an inline reply; at a shared table the bartender
+    // Solo sessions get an inline reply; in a shared snug the bartender
     // only speaks when summoned via the bell.
     if (session && !session.outcome && !session.shared) {
       const owner = await db.query.users.findFirst({ where: eq(users.id, userId) });

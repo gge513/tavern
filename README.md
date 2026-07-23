@@ -41,7 +41,7 @@ one tap), a cadence-contract card, and each new member's onboarding
 **The snug:** a private room with the bartender. Said / Inferring / Unknown
 discipline on anything interpersonal; every visit ends in Act, Invite (with a
 drafted message you own), Clarify, or Release. Invite a collaborator to make
-it a shared table — a live thinking session where the bartender facilitates
+it a shared room — a live thinking session where the bartender facilitates
 only when you ring the bell. Never auto-shared, never searchable.
 
 ## Stack

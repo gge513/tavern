@@ -260,7 +260,7 @@ export const tavernSessions = reprise.table("tavern_sessions", {
     .notNull()
     .references(() => conversations.id),
   outcome: tavernOutcome("outcome"),
-  // A table for two: the owner explicitly invited a collaborator in. The
+  // A shared snug: the owner explicitly invited a collaborator in. The
   // bartender switches to facilitator mode and only speaks when summoned.
   shared: boolean("shared").notNull().default(false),
   // The thinking ledger: the said/inferred/unknown discipline as a working
