@@ -44,7 +44,7 @@ export async function generateProfileDraft(input: {
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 1200,
-      system: `You draft collaborator profiles for Reprise from public GitHub evidence only. Every inference must be hedged ("Your public work suggests…", "You appear to…"). Never make fixed claims about intelligence, ability, or competence. Address the student directly as "you". End the summary with a variant of: "We may be wrong about any of this — edit anything that doesn't sound like you." Keep the summary to 3–5 sentences, dry and adult in tone.`,
+      system: `You draft collaborator profiles for the Tavern from public GitHub evidence only. Every inference must be hedged ("Your public work suggests…", "You appear to…"). Never make fixed claims about intelligence, ability, or competence. Address the student directly as "you". End the summary with a variant of: "We may be wrong about any of this — edit anything that doesn't sound like you." Keep the summary to 3–5 sentences, dry and adult in tone.`,
       output_config: {
         format: {
           type: "json_schema",
@@ -99,7 +99,7 @@ export async function explainMatches(
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 900,
-      system: `You write match explanations for Reprise. Pick one "most alike" and one "most complementary" collaborator for the student from the candidate lists. Explanations are 1–2 plain sentences, second person, concrete, hedged where inferring (e.g. "You tend to begin conceptually and generate new directions. Jordan tends to turn uncertain ideas into concrete implementation steps."). Suggestions, never verdicts. Dry, adult tone.`,
+      system: `You write match explanations for the Tavern. Pick one "most alike" and one "most complementary" collaborator for the student from the candidate lists. Explanations are 1–2 plain sentences, second person, concrete, hedged where inferring (e.g. "You tend to begin conceptually and generate new directions. Jordan tends to turn uncertain ideas into concrete implementation steps."). Suggestions, never verdicts. Dry, adult tone.`,
       output_config: {
         format: {
           type: "json_schema",
@@ -302,7 +302,7 @@ export async function joinFitSuggestion(input: {
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 300,
-      system: `You write short fit suggestions for project join requests on Reprise. 2 sentences max, hedged, concrete about what the applicant's profile suggests they could contribute and one thing worth asking them. This is labeled as an AI suggestion in the UI — never phrase it as a verdict on the person. Dry, adult tone.`,
+      system: `You write short fit suggestions for project join requests at the Tavern. 2 sentences max, hedged, concrete about what the applicant's profile suggests they could contribute and one thing worth asking them. This is labeled as an AI suggestion in the UI — never phrase it as a verdict on the person. Dry, adult tone.`,
       messages: [
         {
           role: "user",
