@@ -82,3 +82,17 @@ signs in.
 - Manual loop: sign up → onboarding → map → introduction → join request →
   project chat with structured types → the snug → reload and confirm
   persistence
+
+## Known limitations
+
+- Realtime is 2-second polling, not sockets — within the course's ≤5s bar,
+  and the message path is isolated so a socket upgrade is contained.
+- The bartender's AI calls degrade to written fallbacks under API failure;
+  fallback text is visibly plainer than the live bartender.
+- Notifications are in-app only (no email delivery).
+- New project spaces can't be created in-app yet (seeded week-one projects
+  only, per the contest scope); rollout unlocks creation.
+- Seeded demo profiles are fictional and labeled; they don't reply to
+  messages.
+- GitHub profile analysis uses unauthenticated API calls unless GITHUB_PAT
+  is set; heavy simultaneous onboarding could hit rate limits.
