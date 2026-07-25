@@ -38,8 +38,9 @@ export async function renameChannelAction(channelId: number, formData: FormData)
   });
   if (!convo) return;
   // Announcements is operator-owned; other channels: creator or admin.
+  // House channels have no creator, so only admins manage them.
   if (convo.isAnnouncements && !user.isAdmin) return;
-  if (!user.isAdmin && convo.createdBy !== user.id && convo.createdBy !== null) return;
+  if (!user.isAdmin && convo.createdBy !== user.id) return;
   await db.update(conversations).set({ name }).where(eq(conversations.id, channelId));
   revalidatePath(`/channels/${channelId}`);
   revalidatePath("/channels");
@@ -52,7 +53,7 @@ export async function archiveChannelAction(channelId: number) {
     where: and(eq(conversations.id, channelId), eq(conversations.kind, "channel")),
   });
   if (!convo || convo.isAnnouncements) return;
-  if (!user.isAdmin && convo.createdBy !== user.id && convo.createdBy !== null) return;
+  if (!user.isAdmin && convo.createdBy !== user.id) return;
   await db
     .update(conversations)
     .set({ archived: !convo.archived })

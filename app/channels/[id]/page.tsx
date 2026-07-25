@@ -20,8 +20,7 @@ export default async function ChannelPage(props: {
   const convo = access.convo;
 
   const canManage =
-    !convo.isAnnouncements &&
-    (user.isAdmin || convo.createdBy === user.id || convo.createdBy === null);
+    !convo.isAnnouncements && (user.isAdmin || convo.createdBy === user.id);
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
