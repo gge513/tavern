@@ -4,7 +4,7 @@ import { bartenderTavern } from "@/lib/ai";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { conversations, messages, tavernSessions, users } from "@/lib/db/schema";
-import { canAccess, listMessages, sendMessage } from "@/lib/messaging";
+import { canAccess, listMessages, listReactions, sendMessage } from "@/lib/messaging";
 import { and, eq } from "drizzle-orm";
 
 export async function GET(
@@ -24,8 +24,13 @@ export async function GET(
   if (!access.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const after = Number(req.nextUrl.searchParams.get("after") ?? 0) || 0;
-  const rows = await listMessages(conversationId, after > 0 ? after : undefined);
-  return NextResponse.json({ messages: rows });
+  // Reactions cover the whole conversation on every poll — they attach to old
+  // messages, so the since-cursor can't carry them.
+  const [rows, reactions] = await Promise.all([
+    listMessages(conversationId, after > 0 ? after : undefined),
+    listReactions(conversationId, userId),
+  ]);
+  return NextResponse.json({ messages: rows, reactions });
 }
 
 export async function POST(

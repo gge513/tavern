@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { REACTIONS, type ReactionSummary } from "@/lib/reactions";
+
 /**
  * The one chat surface: DMs, channels, project chat, threads, tavern.
  * Realtime via 2s polling on the message path — the spec allows polling
@@ -49,6 +51,7 @@ export function Chat(props: {
   prompts?: string[];
 }) {
   const [msgs, setMsgs] = useState<ChatMessage[]>([]);
+  const [reactions, setReactions] = useState<Map<number, ReactionSummary[]>>(new Map());
   const [draft, setDraft] = useState("");
   const [structured, setStructured] = useState<ChatMessage["structuredType"]>(null);
   const [owner, setOwner] = useState<number | "">("");
@@ -64,7 +67,21 @@ export function Chat(props: {
         { cache: "no-store" }
       );
       if (!res.ok) return;
-      const data = (await res.json()) as { messages: ChatMessage[] };
+      const data = (await res.json()) as {
+        messages: ChatMessage[];
+        reactions?: ReactionSummary[];
+      };
+      // Reactions cover the whole conversation every poll — rebuild the map
+      // even when no new messages arrived, so removals disappear too.
+      if (data.reactions) {
+        const byMessage = new Map<number, ReactionSummary[]>();
+        for (const r of data.reactions) {
+          const list = byMessage.get(r.messageId) ?? [];
+          list.push(r);
+          byMessage.set(r.messageId, list);
+        }
+        setReactions(byMessage);
+      }
       if (data.messages.length) {
         setMsgs((prev) => {
           const seen = new Set(prev.map((m) => m.id));
@@ -90,6 +107,33 @@ export function Chat(props: {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs.length]);
+
+  async function toggleReaction(messageId: number, emoji: string) {
+    // Optimistic flip so the pill responds instantly; the next poll reconciles.
+    setReactions((prev) => {
+      const next = new Map(prev);
+      const list = [...(next.get(messageId) ?? [])];
+      const i = list.findIndex((r) => r.emoji === emoji);
+      if (i === -1) {
+        list.push({ messageId, emoji, count: 1, mine: true, names: [] });
+      } else {
+        const r = list[i];
+        const updated = { ...r, mine: !r.mine, count: r.count + (r.mine ? -1 : 1) };
+        if (updated.count <= 0) list.splice(i, 1);
+        else list[i] = updated;
+      }
+      next.set(messageId, list);
+      return next;
+    });
+    try {
+      await fetch(`/api/messages/${messageId}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+    } catch {}
+    await poll();
+  }
 
   async function send() {
     const content = draft.trim();
@@ -124,7 +168,14 @@ export function Chat(props: {
           <p className="text-sm text-dim">Nothing here yet.</p>
         )}
         {msgs.map((m) => (
-          <MessageRow key={m.id} m={m} mine={m.senderId === props.currentUserId} members={props.members} />
+          <MessageRow
+            key={m.id}
+            m={m}
+            mine={m.senderId === props.currentUserId}
+            members={props.members}
+            reactions={reactions.get(m.id)}
+            onToggleReaction={toggleReaction}
+          />
         ))}
         {props.bartenderTyping && sending && (
           <div
@@ -221,8 +272,11 @@ function MessageRow(props: {
   m: ChatMessage;
   mine: boolean;
   members?: { id: number; name: string }[];
+  reactions?: ReactionSummary[];
+  onToggleReaction: (messageId: number, emoji: string) => void;
 }) {
   const { m } = props;
+  const [pickerOpen, setPickerOpen] = useState(false);
   const isBartender = m.senderKind === "bartender";
   const s = STRUCTURED.find((x) => x.key === m.structuredType);
   const ownerName =
@@ -261,6 +315,50 @@ function MessageRow(props: {
         </span>
       </div>
       <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+      <div className="flex flex-wrap items-center gap-1.5 mt-2 relative">
+        {(props.reactions ?? []).map((r) => {
+          const meaning = REACTIONS.find((x) => x.emoji === r.emoji)?.label ?? "";
+          return (
+            <button
+              key={r.emoji}
+              type="button"
+              className={`reaction-pill ${r.mine ? "reaction-pill-mine" : ""}`}
+              title={[meaning, r.names.join(", ")].filter(Boolean).join(" · ")}
+              onClick={() => props.onToggleReaction(m.id, r.emoji)}
+            >
+              <span>{r.emoji}</span>
+              <span>{r.count}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          className="reaction-pill reaction-add"
+          data-open={pickerOpen}
+          title="Raise a glass"
+          onClick={() => setPickerOpen((o) => !o)}
+        >
+          +
+        </button>
+        {pickerOpen && (
+          <div className="card absolute bottom-full mb-1 left-0 p-2 flex gap-1 z-10">
+            {REACTIONS.map((r) => (
+              <button
+                key={r.emoji}
+                type="button"
+                className="reaction-pill text-base"
+                title={r.label}
+                onClick={() => {
+                  setPickerOpen(false);
+                  props.onToggleReaction(m.id, r.emoji);
+                }}
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

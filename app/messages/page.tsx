@@ -5,6 +5,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import { currentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { conversationParticipants, conversations, users } from "@/lib/db/schema";
+import { isOnline } from "@/lib/presence";
 
 export default async function MessagesPage() {
   const user = await currentUser();
@@ -25,7 +26,12 @@ export default async function MessagesPage() {
   const withOthers = await Promise.all(
     mine.map(async (c) => {
       const other = await db
-        .select({ id: users.id, name: users.name, isSeed: users.isSeed })
+        .select({
+          id: users.id,
+          name: users.name,
+          isSeed: users.isSeed,
+          lastSeenAt: users.lastSeenAt,
+        })
         .from(conversationParticipants)
         .innerJoin(users, eq(users.id, conversationParticipants.userId))
         .where(
@@ -50,6 +56,9 @@ export default async function MessagesPage() {
             className="card p-4 flex items-center gap-3 hover:bg-hover transition-colors"
           >
             <span className="font-medium">{c.other?.name ?? "Conversation"}</span>
+            {c.other && !c.other.isSeed && isOnline(c.other.lastSeenAt) && (
+              <span className="presence-dot" title="At the bar right now" />
+            )}
             {c.other?.isSeed && <span className="tag">seeded</span>}
             <span className="text-xs text-dim ml-auto">
               {new Date(c.lastActivityAt).toLocaleDateString()}

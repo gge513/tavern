@@ -82,6 +82,8 @@ export const users = reprise.table("users", {
   // Seeded demo people are labeled honestly everywhere they appear (spec 1).
   isSeed: boolean("is_seed").notNull().default(false),
   onboarding: onboardingState("onboarding").notNull().default("new"),
+  // Presence heartbeat — stamped by /api/presence while a session is open.
+  lastSeenAt: timestamp("last_seen_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -249,6 +251,27 @@ export const messages = reprise.table(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [index("messages_conversation_idx").on(t.conversationId, t.id)]
+);
+
+// One row per user × message × emoji; the emoji value is validated against
+// the fixed house set in lib/reactions.ts, not free-form.
+export const messageReactions = reprise.table(
+  "message_reactions",
+  {
+    id: serial("id").primaryKey(),
+    messageId: integer("message_id")
+      .notNull()
+      .references(() => messages.id),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.messageId, t.userId, t.emoji),
+    index("message_reactions_message_idx").on(t.messageId),
+  ]
 );
 
 export const tavernSessions = reprise.table("tavern_sessions", {

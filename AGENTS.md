@@ -23,7 +23,13 @@ code. Notably: `params` and `searchParams` are Promises (`await` them).
 - `lib/matching.ts` — deterministic candidate scoring + AI-written "why".
 - `lib/traits.ts` — the collaborator-map dimensions and onboarding game.
 - `app/api/conversations/[id]/messages/route.ts` — the polling message API
-  (GET since-cursor, POST send). The Chat client polls it every 2s.
+  (GET since-cursor, POST send). The Chat client polls it every 2s. The GET
+  also carries reaction summaries for the whole conversation.
+- `lib/reactions.ts` — the fixed house reaction set (🍻🥃🎯🔥🎲🕯️); toggle via
+  `app/api/messages/[id]/reactions`. Read access is enough to react.
+- `lib/presence.ts` + `app/api/presence/route.ts` — presence heartbeat
+  (nav widget polls every 30s; online = seen within 2 minutes; seeds and
+  un-onboarded users never appear online).
 - `scripts/seed.ts` — idempotent demo data (seeded people are fictional and
   labeled "seeded demo profile" in the UI — keep it that way).
 

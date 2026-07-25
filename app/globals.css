@@ -226,6 +226,57 @@ main.main-canvas::before {
   color: var(--amber);
 }
 
+/* ——— presence (the lantern glow) ——— */
+
+.presence-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 1.5px solid var(--border-dark);
+  box-shadow: 0 0 5px 1px rgba(191, 168, 84, 0.7);
+}
+
+/* ——— reactions (raise a glass) ——— */
+
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border: 1.5px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.reaction-pill:hover {
+  background: var(--bg-hover);
+}
+
+.reaction-pill-mine {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: #f2ddc4;
+}
+
+.reaction-add {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.card:hover .reaction-add,
+.reaction-add:focus-visible,
+.reaction-add[data-open="true"] {
+  opacity: 1;
+}
+
 /* ——— the night rail (top nav wears Forth's side-rail colors) ——— */
 
 .top-rail {

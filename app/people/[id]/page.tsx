@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { currentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { profiles, users } from "@/lib/db/schema";
+import { isOnline } from "@/lib/presence";
 import { formatTraits } from "@/lib/traits";
 import { openDmAction } from "@/app/map/actions";
 
@@ -39,6 +40,15 @@ export default async function PersonPage(props: {
           <h1 className="text-2xl font-bold flex items-center gap-3">
             {person.name}
             {person.isSeed && <span className="tag">seeded demo profile</span>}
+            {!person.isSeed && isOnline(person.lastSeenAt) && (
+              <span
+                className="text-xs font-normal text-dim flex items-center gap-1.5"
+                title="Seen in the last two minutes"
+              >
+                <span className="presence-dot" />
+                at the bar
+              </span>
+            )}
           </h1>
           {person.githubLogin && (
             <a

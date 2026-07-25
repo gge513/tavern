@@ -1,7 +1,14 @@
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
 import { users, conversations } from "../lib/db/schema";
-import { getOrCreateDm, sendMessage, canAccess, listMessages } from "../lib/messaging";
+import {
+  getOrCreateDm,
+  sendMessage,
+  canAccess,
+  listMessages,
+  listReactions,
+  toggleReaction,
+} from "../lib/messaging";
 
 const mara = await db.query.users.findFirst({ where: eq(users.githubLogin, "seed-mara-v") });
 const jordan = await db.query.users.findFirst({ where: eq(users.githubLogin, "seed-jordan-k") });
@@ -38,4 +45,20 @@ console.log("announcements postable by admin:", aAccGeorge.ok && aAccGeorge.canP
 const { notifications } = await import("../lib/db/schema");
 const notes = await db.query.notifications.findMany({ where: eq(notifications.userId, jordan.id) });
 console.log("mention+dm notifications:", notes.length >= 1, notes.map((n) => n.kind).join(","));
+
+// 4. Reactions: toggle on, aggregate, toggle off; outsider + off-set emoji blocked
+const target = msgs[msgs.length - 1];
+const on = await toggleReaction(jordan.id, target.id, "🍻");
+const withR = await listReactions(dm, jordan.id);
+const pill = withR.find((r) => r.messageId === target.id && r.emoji === "🍻");
+console.log("reaction on:", on.ok && pill?.count === 1 && pill?.mine === true);
+const outsider = await toggleReaction(george.id, target.id, "🍻");
+const badEmoji = await toggleReaction(jordan.id, target.id, "💀");
+console.log("reaction outsider blocked:", !outsider.ok, "| off-set emoji blocked:", !badEmoji.ok);
+const off = await toggleReaction(jordan.id, target.id, "🍻");
+const cleared = await listReactions(dm, jordan.id);
+console.log(
+  "reaction off:",
+  off.ok && !cleared.some((r) => r.messageId === target.id && r.emoji === "🍻")
+);
 process.exit(0);

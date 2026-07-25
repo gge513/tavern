@@ -2,6 +2,7 @@ import Link from "next/link";
 import { and, count, eq, isNull } from "drizzle-orm";
 
 import { signOut } from "@/auth";
+import { Presence } from "@/app/components/presence";
 import { currentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
@@ -46,6 +47,7 @@ export async function SiteNav() {
         <div className="ml-auto flex items-center gap-2">
           {user ? (
             <>
+              {onboarded && <Presence />}
               <Link href="/notifications" className="rail-link flex items-center gap-1.5">
                 Alerts
                 {unread > 0 && <span className="rail-badge">{unread}</span>}

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import {
   conversationParticipants,
   conversations,
+  messageReactions,
   messages,
   notifications,
   projectMembers,
@@ -12,6 +13,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { profileForMatching } from "@/lib/matching";
+import { REACTION_EMOJIS, type ReactionSummary } from "@/lib/reactions";
 
 /**
  * Conversation access + the message send path. One model for DMs, channels,
@@ -279,6 +281,66 @@ export async function sharedTablesFor(userId: number) {
     )
     .orderBy(sql`${tavernSessions.id} desc`);
   return rows;
+}
+
+/**
+ * Reaction summaries for a whole conversation, grouped message × emoji.
+ * Returned on every poll (reactions land on old messages, so a since-cursor
+ * can't carry them) — cheap at the 500-message conversation cap.
+ */
+export async function listReactions(
+  conversationId: number,
+  viewerId: number
+): Promise<ReactionSummary[]> {
+  const rows = await db
+    .select({
+      messageId: messageReactions.messageId,
+      emoji: messageReactions.emoji,
+      count: sql<number>`count(*)::int`,
+      mine: sql<boolean>`bool_or(${messageReactions.userId} = ${viewerId})`,
+      names: sql<string[]>`array_agg(${users.name} order by ${messageReactions.id})`,
+    })
+    .from(messageReactions)
+    .innerJoin(messages, eq(messages.id, messageReactions.messageId))
+    .innerJoin(users, eq(users.id, messageReactions.userId))
+    .where(eq(messages.conversationId, conversationId))
+    .groupBy(messageReactions.messageId, messageReactions.emoji);
+  return rows;
+}
+
+/**
+ * Toggle one user's reaction on a message. Read access to the conversation is
+ * enough — you can raise a glass in #announcements or an archived channel
+ * even where you can't post.
+ */
+export async function toggleReaction(
+  userId: number,
+  messageId: number,
+  emoji: string
+): Promise<{ ok: boolean }> {
+  if (!REACTION_EMOJIS.has(emoji)) return { ok: false };
+  const msg = await db.query.messages.findFirst({ where: eq(messages.id, messageId) });
+  if (!msg) return { ok: false };
+  const access = await canAccess(userId, msg.conversationId);
+  if (!access.ok) return { ok: false };
+
+  const removed = await db
+    .delete(messageReactions)
+    .where(
+      and(
+        eq(messageReactions.messageId, messageId),
+        eq(messageReactions.userId, userId),
+        eq(messageReactions.emoji, emoji)
+      )
+    )
+    .returning({ id: messageReactions.id });
+  if (removed.length === 0) {
+    await db
+      .insert(messageReactions)
+      .values({ messageId, userId, emoji })
+      .onConflictDoNothing();
+  }
+  return { ok: true };
 }
 
 export async function listMessages(conversationId: number, afterId?: number) {
