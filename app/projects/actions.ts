@@ -240,6 +240,13 @@ export async function toggleResolvedAction(messageId: number, projectId: number)
   if (!member) return;
   const msg = await db.query.messages.findFirst({ where: eq(messages.id, messageId) });
   if (!msg || msg.structuredType !== "decision") return;
+  // Membership is checked against projectId, so the message has to live in
+  // that project too. Otherwise a member of any project could flip a decision
+  // in one they don't belong to.
+  const convo = await db.query.conversations.findFirst({
+    where: and(eq(conversations.id, msg.conversationId), eq(conversations.projectId, projectId)),
+  });
+  if (!convo) return;
   await db
     .update(messages)
     .set({ resolved: !msg.resolved })
