@@ -33,6 +33,26 @@ code. Notably: `params` and `searchParams` are Promises (`await` them).
 - `scripts/seed.ts` — idempotent demo data (seeded people are fictional and
   labeled "seeded demo profile" in the UI — keep it that way).
 
+## Deploys (git-connected since 2026-07-24)
+
+The Vercel project is connected to github.com/gge513/tavern. That means:
+
+- **Push to `main` = production deploy** to tavern-cohort.vercel.app. Main is
+  always shippable; nothing lands on main that shouldn't be live minutes later.
+- **Unfinished work goes on a branch.** Every branch push gets an automatic
+  preview URL (check the commit status or `npx vercel ls`) — use previews to
+  look at work-in-progress without touching the live app.
+- `npx vercel deploy --prod` still works as a manual escape hatch, but it
+  deploys the local working tree (including uncommitted edits). Prefer the git
+  path so the live site always corresponds to a commit.
+- Env-var changes only take effect on the NEXT deploy, whichever path made it.
+- Preview deploys share prod env vars (AUTH_URL is pinned to the canonical
+  domain, so OAuth on a preview URL redirects to prod — known quirk, fine).
+- Schema changes: apply additive SQL BEFORE pushing the code that needs it
+  (one shared Neon DB for prod and dev; `db:push` currently trips on
+  pre-existing project_members constraint drift — never accept its truncate
+  offer; use a targeted script like scripts/migrate-presence-reactions.mts).
+
 ## Commands
 
 - `npm run dev` — dev server
