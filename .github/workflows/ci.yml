@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual re-run, e.g. after adding or rotating the Neon secrets.
+  workflow_dispatch:
 
 # Two independent gates.
 #
