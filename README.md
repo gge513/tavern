@@ -6,6 +6,12 @@
 Vercel aliases may resolve, but they are aliases of this same deployment and
 the same database; sign-in on any of them redirects here.
 
+**Want to see it without an account?**
+[https://tavern-cohort.vercel.app/preview](https://tavern-cohort.vercel.app/preview)
+is a read-only look at the channel surface, a collaborator profile, and an
+explained match. It renders only the seeded demo people (fictional, labeled),
+never a real member's writing, so it can be public without an auth check.
+
 A communication platform for a cohort of ~60 coding students moving from solo
 GitHub submissions to shared projects. Students can see each other's code but
 not each other — the Tavern fixes the second half: collaborator profiles

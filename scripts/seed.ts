@@ -12,6 +12,7 @@ import { db } from "../lib/db";
 import {
   cadenceContracts,
   conversations,
+  matches,
   messages,
   profiles,
   projectMembers,
@@ -257,6 +258,47 @@ async function main() {
         githubAnalysis: { degraded: "seeded demo profile — no live GitHub read" },
       })
       .onConflictDoNothing({ target: profiles.userId });
+  }
+
+  // Two matches between seeded people. Live matches are always generated for a
+  // specific viewer, so nothing pairs two seeds on its own — but /preview needs
+  // one to show the explained-match card without an account, and hand-written
+  // fiction is the honest way to get it. Voice matches the generated ones:
+  // second person, addressed to the person whose card it is.
+  const SEED_MATCHES: {
+    a: string;
+    b: string;
+    type: "alike" | "complementary";
+    explanation: string;
+  }[] = [
+    {
+      a: "seed-mara-v",
+      b: "seed-dev-o",
+      type: "complementary",
+      explanation:
+        "Dev leads with integration and systems shape, where your map is lighter; you test before believing anything, which is where his is. Pairings like this tend to cover more ground than two of the same, though they usually argue first.",
+    },
+    {
+      a: "seed-mara-v",
+      b: "seed-priya-n",
+      type: "alike",
+      explanation:
+        "You both lead analytical and reach for tests as the way to find out whether something is true. Similar instincts often make the first week of working together feel easy, and the third week feel like nobody is covering the gaps.",
+    },
+  ];
+
+  for (const m of SEED_MATCHES) {
+    const aId = ids.get(m.a);
+    const bId = ids.get(m.b);
+    if (!aId || !bId) continue;
+    const already = await db.query.matches.findFirst({
+      where: (t, { and, eq: e }) => and(e(t.userAId, aId), e(t.userBId, bId)),
+    });
+    if (!already) {
+      await db
+        .insert(matches)
+        .values({ userAId: aId, userBId: bId, type: m.type, explanation: m.explanation });
+    }
   }
 
   for (const proj of PROJECTS) {

@@ -31,6 +31,9 @@ export default async function Home() {
         <Link href="/signup" className="btn btn-ghost">
           Create an account
         </Link>
+        <Link href="/preview" className="btn btn-ghost">
+          Look inside first
+        </Link>
       </div>
       <div className="card p-5 text-sm text-dim leading-relaxed">
         <p>
