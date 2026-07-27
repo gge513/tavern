@@ -2,6 +2,10 @@
 
 *Slack moves messages. The Tavern builds understanding.*
 
+**Live: https://tavern-cohort.vercel.app** — this is the canonical host. Other
+Vercel aliases may resolve, but they are aliases of this same deployment and
+the same database; sign-in on any of them redirects here.
+
 A communication platform for a cohort of ~60 coding students moving from solo
 GitHub submissions to shared projects. Students can see each other's code but
 not each other — the Tavern fixes the second half: collaborator profiles
