@@ -39,15 +39,28 @@ The Vercel project is connected to github.com/gge513/tavern. That means:
 
 - **Push to `main` = production deploy** to tavern-cohort.vercel.app. Main is
   always shippable; nothing lands on main that shouldn't be live minutes later.
-- **Unfinished work goes on a branch.** Every branch push gets an automatic
-  preview URL (check the commit status or `npx vercel ls`) — use previews to
-  look at work-in-progress without touching the live app.
+- **Unfinished work goes on a branch, and branches do NOT deploy.**
+  `vercel.json` sets `git.deploymentEnabled` so only `main` builds. Verify
+  branch work **locally** (`npm run dev`, `npm run build`, `npm test`) plus CI,
+  which runs on every pull request.
+- **There is no usable preview environment, and previously there was no
+  working one either.** All seven Vercel env vars are scoped to Production
+  only, so any preview build died at module load on
+  `DATABASE_URL is not set` — every route pulls in `lib/db` through `SiteNav`
+  in the root layout. An older version of this file claimed previews shared
+  prod env vars; that was never true, and the branch-preview workflow built on
+  it could not have worked. Production-only scoping is the correct posture: it
+  is what keeps the live database and the Anthropic key out of branch deploys.
+  If previews are ever needed (outside contributors), give them their own Neon
+  branch and a scoped key, do not copy prod credentials sideways.
+- Note that a preview could not have tested auth anyway: `AUTH_URL` is pinned
+  to the canonical domain, so OAuth from any other host redirects to prod.
+  Auth changes are verified locally against `localhost:3000` (an allowed
+  callback on the OAuth app) before merging to `main`.
 - `npx vercel deploy --prod` still works as a manual escape hatch, but it
   deploys the local working tree (including uncommitted edits). Prefer the git
   path so the live site always corresponds to a commit.
 - Env-var changes only take effect on the NEXT deploy, whichever path made it.
-- Preview deploys share prod env vars (AUTH_URL is pinned to the canonical
-  domain, so OAuth on a preview URL redirects to prod — known quirk, fine).
 - Schema changes: apply additive SQL BEFORE pushing the code that needs it
   (one shared Neon DB for prod and dev; `db:push` currently trips on
   pre-existing project_members constraint drift — never accept its truncate
