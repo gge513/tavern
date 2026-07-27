@@ -84,11 +84,30 @@ signs in.
 ## Test plan
 
 - `npm run build` — typecheck + production build
-- `npx tsx scripts/integration-smoke.mts` — DM creation/persistence, access
-  control (participant vs outsider), channel vs announcements posting rules,
-  mention notifications
-- `npx tsx scripts/ai-smoke.mts` — live Anthropic call sites (needs
-  `ANTHROPIC_API_KEY`)
+- `npm test` — the integration smoke: DM creation/persistence, access control
+  (participant vs outsider), channel vs announcements posting rules, mention
+  notifications, and the reaction rules (house set only, participants only).
+  13 checks. **It fails the process on any failed check** and prints which one.
+- `npm run test:ai` — live Anthropic call sites (needs `ANTHROPIC_API_KEY`)
+- Manual loop: sign up → onboarding → map → introduction → join request →
+  project chat with structured types → the snug → reload and confirm
+  persistence
+
+### CI
+
+`.github/workflows/ci.yml` runs on every push to `main` and every PR:
+
+- **Lint and build** — always runs, needs no credentials. Lint is currently
+  reported but not enforced (one pre-existing `react-hooks` error in the chat
+  poll); the build is a hard gate.
+- **Integration smoke** — creates a throwaway Neon branch, seeds it, runs
+  `npm test` against it, and deletes the branch in an `always()` step. This
+  matters because the smoke script writes: it sends real messages and toggles
+  real reactions, and it must never do that to production. The job self-skips
+  unless `NEON_API_KEY` and `NEON_PROJECT_ID` repository secrets are set.
+
+`npm test` run locally writes to whatever `DATABASE_URL` points at, so it
+prints the target host before it does anything.
 - Manual loop: sign up → onboarding → map → introduction → join request →
   project chat with structured types → the snug → reload and confirm
   persistence

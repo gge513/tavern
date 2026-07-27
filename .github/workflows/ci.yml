@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Two independent gates.
+#
+# `build` always runs and needs no credentials: lint plus the production build,
+# which is also the typecheck gate. Every route is dynamic, so a syntactically
+# valid DATABASE_URL is enough to build — nothing connects.
+#
+# `smoke` runs the messaging and access-control integration test against a
+# THROWAWAY Neon branch, created before and deleted after. That is the point:
+# the smoke script writes real messages and toggles real reactions, and it used
+# to do that against the shared production database. It never touches prod here.
+#
+# The smoke job self-skips when the Neon credentials are absent, so a fork or a
+# repo without secrets gets a green build gate rather than a red herring.
+
+jobs:
+  build:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Reported, not enforced — on purpose, and this should not stay that way.
+      # `npm run lint` currently exits 1 on one pre-existing error:
+      # app/components/chat.tsx calls poll() directly inside useEffect, which
+      # trips react-hooks/set-state-in-effect. That is the initial fetch on
+      # mount for the 2s message poll, so fixing it means touching the core
+      # chat loop, which is not something to do in the same change that
+      # introduces CI. Make it blocking once that is resolved.
+      - run: npm run lint
+        continue-on-error: true
+
+      - run: npm run build
+        env:
+          # Never connected to. Present only because lib/db throws without it.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/placeholder
+          AUTH_SECRET: build-time-placeholder
+
+  preflight:
+    name: Check for Neon credentials
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: |
+          if [ -n "$NEON_API_KEY" ] && [ -n "$NEON_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NEON_API_KEY / NEON_PROJECT_ID not set — skipping the integration smoke job."
+          fi
+
+  smoke:
+    name: Integration smoke (throwaway Neon branch)
+    runs-on: ubuntu-latest
+    needs: [build, preflight]
+    if: needs.preflight.outputs.configured == 'true'
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+      NEON_API: https://console.neon.tech/api/v2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Create throwaway Neon branch
+        id: branch
+        run: |
+          set -euo pipefail
+          NAME="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          RESP=$(curl -sS -X POST \
+            "${NEON_API}/projects/${NEON_PROJECT_ID}/branches" \
+            -H "Authorization: Bearer ${NEON_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"branch\":{\"name\":\"${NAME}\"},\"endpoints\":[{\"type\":\"read_write\"}]}")
+
+          BRANCH_ID=$(echo "$RESP" | jq -r '.branch.id // empty')
+          DB_URL=$(echo "$RESP" | jq -r '.connection_uris[0].connection_uri // empty')
+
+          if [ -z "$BRANCH_ID" ] || [ -z "$DB_URL" ]; then
+            # Print the error without echoing the whole response, which can
+            # carry a connection string.
+            echo "Failed to create Neon branch:"
+            echo "$RESP" | jq -r '.message // .error // "unrecognized API response"'
+            exit 1
+          fi
+
+          echo "branch_id=${BRANCH_ID}" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::${DB_URL}"
+          echo "DATABASE_URL=${DB_URL}" >> "$GITHUB_ENV"
+          echo "Created branch ${NAME} (${BRANCH_ID})"
+
+      - name: Seed the branch
+        # A Neon branch copies schema and data, so this is belt-and-braces for
+        # the case where the parent is missing a seed row. seed.ts is
+        # idempotent. db:push is deliberately NOT run: it trips on known
+        # constraint drift and offers to truncate (see AGENTS.md).
+        run: npm run db:seed
+
+      - name: Run integration smoke
+        run: npm test
+
+      - name: Delete throwaway Neon branch
+        if: always() && steps.branch.outputs.branch_id != ''
+        run: |
+          curl -sS -X DELETE \
+            "${NEON_API}/projects/${NEON_PROJECT_ID}/branches/${{ steps.branch.outputs.branch_id }}" \
+            -H "Authorization: Bearer ${NEON_API_KEY}" > /dev/null
+          echo "Deleted branch ${{ steps.branch.outputs.branch_id }}"

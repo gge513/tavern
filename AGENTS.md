@@ -59,8 +59,14 @@ The Vercel project is connected to github.com/gge513/tavern. That means:
 - `npm run build` — production build (also the typecheck gate)
 - `npm run db:push` — push schema to Postgres (needs DATABASE_URL in env)
 - `npm run db:seed` — seed demo data
-- `npx tsx scripts/integration-smoke.mts` — messaging/access integration test
-- `npx tsx scripts/ai-smoke.mts` — live Anthropic call-site check (needs key)
+- `npm test` — messaging/access integration smoke (13 checks; exits non-zero on
+  any failure and names it). WRITES to `DATABASE_URL` — it sends real messages
+  and toggles real reactions, so it prints the target host first. CI runs it
+  against a throwaway Neon branch, never prod.
+- `npm run test:ai` — live Anthropic call-site check (needs key)
+- CI (`.github/workflows/ci.yml`): build is a hard gate on every push and PR;
+  lint is reported but not enforced (one pre-existing chat.tsx error); the
+  smoke job self-skips without `NEON_API_KEY` + `NEON_PROJECT_ID` secrets.
 
 Load env for scripts with: `set -a; source .env.local; set +a`.
 
