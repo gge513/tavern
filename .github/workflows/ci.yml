@@ -76,6 +76,9 @@ jobs:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
       NEON_API: https://console.neon.tech/api/v2
+      # Inherited from the parent branch, so these are fixed for this project.
+      NEON_ROLE: neondb_owner
+      NEON_DATABASE: neondb
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,20 +99,55 @@ jobs:
             -d "{\"branch\":{\"name\":\"${NAME}\"},\"endpoints\":[{\"type\":\"read_write\"}]}")
 
           BRANCH_ID=$(echo "$RESP" | jq -r '.branch.id // empty')
-          DB_URL=$(echo "$RESP" | jq -r '.connection_uris[0].connection_uri // empty')
 
-          if [ -z "$BRANCH_ID" ] || [ -z "$DB_URL" ]; then
+          # Record the id the instant we have it, BEFORE anything else can
+          # fail. The cleanup step keys off this output, so exiting earlier
+          # than this would orphan a real branch with nothing tracking it —
+          # which is exactly what the first run of this workflow did.
+          if [ -n "$BRANCH_ID" ]; then
+            echo "branch_id=${BRANCH_ID}" >> "$GITHUB_OUTPUT"
+          fi
+
+          HOST=$(echo "$RESP" | jq -r '.endpoints[0].host // empty')
+          if [ -z "$BRANCH_ID" ] || [ -z "$HOST" ]; then
             # Print the error without echoing the whole response, which can
-            # carry a connection string.
+            # carry credentials.
             echo "Failed to create Neon branch:"
             echo "$RESP" | jq -r '.message // .error // "unrecognized API response"'
             exit 1
           fi
 
-          echo "branch_id=${BRANCH_ID}" >> "$GITHUB_OUTPUT"
+          # The create-branch response carries no connection string — it
+          # returns branch/endpoints/roles/databases and expects you to
+          # assemble one. Role and database are inherited from the parent.
+          PW=$(curl -sS -H "Authorization: Bearer ${NEON_API_KEY}" \
+            "${NEON_API}/projects/${NEON_PROJECT_ID}/branches/${BRANCH_ID}/roles/${NEON_ROLE}/reveal_password" \
+            | jq -r '.password // empty')
+          if [ -z "$PW" ]; then
+            echo "Could not reveal the password for role ${NEON_ROLE} on ${BRANCH_ID}"
+            exit 1
+          fi
+          echo "::add-mask::${PW}"
+
+          DB_URL="postgresql://${NEON_ROLE}:${PW}@${HOST}/${NEON_DATABASE}?sslmode=require"
           echo "::add-mask::${DB_URL}"
           echo "DATABASE_URL=${DB_URL}" >> "$GITHUB_ENV"
-          echo "Created branch ${NAME} (${BRANCH_ID})"
+          echo "Created branch ${NAME} (${BRANCH_ID}) on ${HOST}"
+
+      - name: Wait for the branch endpoint to accept connections
+        # A fresh branch reports current_state "init" before "ready". Poll
+        # rather than sleep a guessed interval.
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            STATE=$(curl -sS -H "Authorization: Bearer ${NEON_API_KEY}" \
+              "${NEON_API}/projects/${NEON_PROJECT_ID}/branches/${{ steps.branch.outputs.branch_id }}" \
+              | jq -r '.branch.current_state // empty')
+            if [ "$STATE" = "ready" ]; then echo "branch ready after ${i} check(s)"; exit 0; fi
+            sleep 2
+          done
+          echo "branch did not reach ready state in time (last state: ${STATE:-unknown})"
+          exit 1
 
       - name: Seed the branch
         # A Neon branch copies schema and data, so this is belt-and-braces for
