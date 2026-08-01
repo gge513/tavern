@@ -8,6 +8,15 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 
 /**
+ * A real cost-10 hash of a passphrase nothing can supply, used only to give
+ * the "no such user" path the same bcrypt cost as the "wrong password" path.
+ * Must stay at the same cost factor as app/signup/actions.ts, or the timings
+ * diverge again and the guard below silently stops working.
+ */
+const DUMMY_PASSWORD_HASH =
+  "$2b$10$ee/pVcX/w7T5hoqAQjBdru4M3PGrhmfUgswPvCFoYvhqGMBaIpJmm";
+
+/**
  * Auth.js v5, two doors into the same users table (spec section 1):
  *  - GitHub OAuth — the target, because the generated profile depends on
  *    GitHub identity.
@@ -35,10 +44,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(users.email, email),
         });
         // Same null for "no such user" and "wrong password": sign-in errors
-        // must not reveal which emails have accounts.
-        if (!user?.passwordHash) return null;
-        const ok = await bcrypt.compare(password, user.passwordHash);
-        if (!ok) return null;
+        // must not reveal which emails have accounts. Matching the messages
+        // is not enough: bcrypt is deliberately slow, so returning early on
+        // a missing row made the two cases separable with a stopwatch. Always
+        // pay the compare, against a dummy hash when there is no row, and
+        // decide afterwards.
+        const ok = await bcrypt.compare(
+          password,
+          user?.passwordHash ?? DUMMY_PASSWORD_HASH
+        );
+        if (!user?.passwordHash || !ok) return null;
 
         return { id: String(user.id), name: user.name, email: user.email };
       },
