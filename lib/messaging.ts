@@ -106,8 +106,16 @@ async function fanOutNotifications(
   const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) });
   const senderName = sender?.name ?? "Someone";
   const href = hrefFor(convo);
+  const excerpt = content.slice(0, 80);
 
   const notified = new Set<number>([senderId]);
+  // Recipients accumulate here and are written in one statement at the end.
+  // Reported as an N+1 by @arjun-singh2127 in #14: this used to run an access
+  // check plus an insert per mentioned user, and canAccess re-read the
+  // conversation and the user row every time, so a message naming ten people
+  // cost roughly forty round trips. It is now two queries at most, whatever
+  // the mention count.
+  const rows: (typeof notifications.$inferInsert)[] = [];
 
   // @mentions: match @github-login tokens against users who can see this conversation.
   const handles = [...content.matchAll(/@([A-Za-z0-9-]{2,})/g)].map((m) => m[1].toLowerCase());
@@ -116,15 +124,18 @@ async function fanOutNotifications(
       .select()
       .from(users)
       .where(inArray(sql`lower(${users.githubLogin})`, handles));
-    for (const m of mentioned) {
-      if (notified.has(m.id)) continue;
-      const access = await canAccess(m.id, convo.id);
-      if (!access.ok) continue;
+    const candidates = mentioned.filter((m) => !notified.has(m.id));
+    const visible = await visibleTo(
+      convo,
+      candidates.map((m) => m.id)
+    );
+    for (const m of candidates) {
+      if (!visible.has(m.id)) continue;
       notified.add(m.id);
-      await db.insert(notifications).values({
+      rows.push({
         userId: m.id,
         kind: "mention",
-        content: `${senderName} mentioned you: "${content.slice(0, 80)}"`,
+        content: `${senderName} mentioned you: "${excerpt}"`,
         href,
       });
     }
@@ -137,14 +148,65 @@ async function fanOutNotifications(
     for (const p of parts) {
       if (notified.has(p.userId)) continue;
       notified.add(p.userId);
-      await db.insert(notifications).values({
+      rows.push({
         userId: p.userId,
         kind: "dm",
-        content: `${senderName}: "${content.slice(0, 80)}"`,
+        content: `${senderName}: "${excerpt}"`,
         href,
       });
     }
   }
+
+  if (rows.length) await db.insert(notifications).values(rows);
+}
+
+/**
+ * Which of `ids` can see `convo`, resolved in one query instead of one per
+ * user. This is canAccess()'s `ok` branch and nothing more: canAccess stays
+ * the single gate on every send path, and this exists only so notification
+ * fan-out stops calling it in a loop.
+ *
+ * The per-kind rules must stay identical to canAccess or a mention could
+ * notify someone who cannot open the room it was written in, which is the
+ * leak the per-user check was there to prevent:
+ *  - channel: visible to everyone (archived only removes canPost, not access)
+ *  - dm / tavern: needs a participant row
+ *  - project / thread: needs project membership, and a conversation with no
+ *    projectId is visible to nobody
+ */
+async function visibleTo(
+  convo: typeof conversations.$inferSelect,
+  ids: number[]
+): Promise<Set<number>> {
+  if (!ids.length) return new Set();
+
+  if (convo.kind === "channel") return new Set(ids);
+
+  if (convo.kind === "dm" || convo.kind === "tavern") {
+    const parts = await db
+      .select({ userId: conversationParticipants.userId })
+      .from(conversationParticipants)
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, convo.id),
+          inArray(conversationParticipants.userId, ids)
+        )
+      );
+    return new Set(parts.map((p) => p.userId));
+  }
+
+  // project or thread
+  if (!convo.projectId) return new Set();
+  const members = await db
+    .select({ userId: projectMembers.userId })
+    .from(projectMembers)
+    .where(
+      and(
+        eq(projectMembers.projectId, convo.projectId),
+        inArray(projectMembers.userId, ids)
+      )
+    );
+  return new Set(members.map((m) => m.userId));
 }
 
 export function hrefFor(convo: {
